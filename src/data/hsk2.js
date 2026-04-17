@@ -1,0 +1,148 @@
+// HSK 3.0 Level 2 — 120 kata representatif (dari total 772)
+// Level 2 mencakup kosakata untuk komunikasi sehari-hari yang lebih lengkap
+
+export const hsk2 = [
+  // ── Kata Kerja ──────────────────────────────────────────────
+  { id: '2-001', hanzi: '帮助', pinyin: 'bāngzhù', arti: 'membantu / bantuan', contoh: '谢谢你的帮助。', terjemahan: 'Terima kasih atas bantuanmu.', level: 2 },
+  { id: '2-002', hanzi: '等', pinyin: 'děng', arti: 'menunggu', contoh: '请等一下。', terjemahan: 'Tolong tunggu sebentar.', level: 2 },
+  { id: '2-003', hanzi: '出发', pinyin: 'chūfā', arti: 'berangkat', contoh: '我们明天出发。', terjemahan: 'Kita berangkat besok.', level: 2 },
+  { id: '2-004', hanzi: '到达', pinyin: 'dàodá', arti: 'tiba / sampai', contoh: '飞机已经到达了。', terjemahan: 'Pesawat sudah tiba.', level: 2 },
+  { id: '2-005', hanzi: '回来', pinyin: 'huílai', arti: 'kembali / pulang', contoh: '他什么时候回来？', terjemahan: 'Kapan dia kembali?', level: 2 },
+  { id: '2-006', hanzi: '出去', pinyin: 'chūqù', arti: 'keluar / pergi keluar', contoh: '他出去买东西了。', terjemahan: 'Dia pergi keluar untuk berbelanja.', level: 2 },
+  { id: '2-007', hanzi: '进来', pinyin: 'jìnlai', arti: 'masuk ke sini', contoh: '请进来！', terjemahan: 'Silakan masuk!', level: 2 },
+  { id: '2-008', hanzi: '打电话', pinyin: 'dǎ diànhuà', arti: 'menelepon', contoh: '我给他打电话。', terjemahan: 'Saya menelepon dia.', level: 2 },
+  { id: '2-009', hanzi: '告诉', pinyin: 'gàosù', arti: 'memberitahu', contoh: '请告诉我答案。', terjemahan: 'Tolong beritahu saya jawabannya.', level: 2 },
+  { id: '2-010', hanzi: '问', pinyin: 'wèn', arti: 'bertanya', contoh: '我想问你一个问题。', terjemahan: 'Saya ingin bertanya satu pertanyaan padamu.', level: 2 },
+  { id: '2-011', hanzi: '回答', pinyin: 'huídá', arti: 'menjawab', contoh: '请回答我的问题。', terjemahan: 'Tolong jawab pertanyaan saya.', level: 2 },
+  { id: '2-012', hanzi: '介绍', pinyin: 'jièshào', arti: 'memperkenalkan', contoh: '请介绍一下你自己。', terjemahan: 'Tolong perkenalkan dirimu.', level: 2 },
+  { id: '2-013', hanzi: '认识', pinyin: 'rènshi', arti: 'mengenal / mengetahui', contoh: '很高兴认识你。', terjemahan: 'Senang berkenalan denganmu.', level: 2 },
+  { id: '2-014', hanzi: '记得', pinyin: 'jìde', arti: 'ingat / masih ingat', contoh: '你记得他的名字吗？', terjemahan: 'Kamu ingat namanya?', level: 2 },
+  { id: '2-015', hanzi: '忘记', pinyin: 'wàngjì', arti: 'lupa', contoh: '我忘记带钥匙了。', terjemahan: 'Saya lupa membawa kunci.', level: 2 },
+  { id: '2-016', hanzi: '觉得', pinyin: 'juéde', arti: 'merasa / berpendapat', contoh: '我觉得这很有趣。', terjemahan: 'Saya merasa ini sangat menarik.', level: 2 },
+  { id: '2-017', hanzi: '希望', pinyin: 'xīwàng', arti: 'berharap / semoga', contoh: '我希望你快乐。', terjemahan: 'Saya berharap kamu bahagia.', level: 2 },
+  { id: '2-018', hanzi: '需要', pinyin: 'xūyào', arti: 'membutuhkan / perlu', contoh: '我需要你的帮助。', terjemahan: 'Saya membutuhkan bantuanmu.', level: 2 },
+  { id: '2-019', hanzi: '准备', pinyin: 'zhǔnbèi', arti: 'mempersiapkan / siap', contoh: '你准备好了吗？', terjemahan: 'Apakah kamu sudah siap?', level: 2 },
+  { id: '2-020', hanzi: '开始', pinyin: 'kāishǐ', arti: 'mulai / memulai', contoh: '我们开始上课吧。', terjemahan: 'Mari kita mulai pelajaran.', level: 2 },
+  { id: '2-021', hanzi: '结束', pinyin: 'jiéshù', arti: 'selesai / berakhir', contoh: '课结束了。', terjemahan: 'Pelajaran sudah selesai.', level: 2 },
+  { id: '2-022', hanzi: '休息', pinyin: 'xiūxi', arti: 'istirahat', contoh: '我需要休息一下。', terjemahan: 'Saya perlu istirahat sebentar.', level: 2 },
+  { id: '2-023', hanzi: '睡觉', pinyin: 'shuì jiào', arti: 'tidur', contoh: '我十一点睡觉。', terjemahan: 'Saya tidur jam sebelas.', level: 2 },
+  { id: '2-024', hanzi: '起床', pinyin: 'qǐ chuáng', arti: 'bangun tidur', contoh: '我每天六点起床。', terjemahan: 'Saya bangun tidur jam enam setiap hari.', level: 2 },
+  { id: '2-025', hanzi: '换', pinyin: 'huàn', arti: 'mengganti / menukar', contoh: '我要换衣服。', terjemahan: 'Saya mau ganti baju.', level: 2 },
+  { id: '2-026', hanzi: '用', pinyin: 'yòng', arti: 'menggunakan / memakai', contoh: '我用筷子吃饭。', terjemahan: 'Saya makan menggunakan sumpit.', level: 2 },
+  { id: '2-027', hanzi: '找', pinyin: 'zhǎo', arti: 'mencari', contoh: '我在找我的钥匙。', terjemahan: 'Saya sedang mencari kunci saya.', level: 2 },
+  { id: '2-028', hanzi: '带', pinyin: 'dài', arti: 'membawa / mengajak', contoh: '请带伞来。', terjemahan: 'Tolong bawa payung.', level: 2 },
+  { id: '2-029', hanzi: '放', pinyin: 'fàng', arti: 'menaruh / meletakkan', contoh: '把书放在桌上。', terjemahan: 'Letakkan buku di atas meja.', level: 2 },
+  { id: '2-030', hanzi: '拿', pinyin: 'ná', arti: 'mengambil / memegang', contoh: '你拿着这个。', terjemahan: 'Kamu pegang ini.', level: 2 },
+
+  // ── Kata Sifat ──────────────────────────────────────────────
+  { id: '2-031', hanzi: '有意思', pinyin: 'yǒu yìsi', arti: 'menarik / seru', contoh: '这本书很有意思。', terjemahan: 'Buku ini sangat menarik.', level: 2 },
+  { id: '2-032', hanzi: '好吃', pinyin: 'hǎochī', arti: 'enak (makanan)', contoh: '这个菜很好吃。', terjemahan: 'Masakan ini sangat enak.', level: 2 },
+  { id: '2-033', hanzi: '好看', pinyin: 'hǎokàn', arti: 'bagus / menarik (dilihat)', contoh: '这部电影很好看。', terjemahan: 'Film ini sangat bagus.', level: 2 },
+  { id: '2-034', hanzi: '难', pinyin: 'nán', arti: 'sulit / susah', contoh: '汉语很难学。', terjemahan: 'Bahasa Mandarin susah dipelajari.', level: 2 },
+  { id: '2-035', hanzi: '容易', pinyin: 'róngyì', arti: 'mudah / gampang', contoh: '这道题很容易。', terjemahan: 'Soal ini sangat mudah.', level: 2 },
+  { id: '2-036', hanzi: '快', pinyin: 'kuài', arti: 'cepat', contoh: '他跑得很快。', terjemahan: 'Dia berlari sangat cepat.', level: 2 },
+  { id: '2-037', hanzi: '慢', pinyin: 'màn', arti: 'lambat / pelan', contoh: '请说慢一点。', terjemahan: 'Tolong berbicara lebih pelan.', level: 2 },
+  { id: '2-038', hanzi: '长', pinyin: 'cháng', arti: 'panjang', contoh: '这条路很长。', terjemahan: 'Jalan ini sangat panjang.', level: 2 },
+  { id: '2-039', hanzi: '短', pinyin: 'duǎn', arti: 'pendek', contoh: '这段路很短。', terjemahan: 'Jalan ini sangat pendek.', level: 2 },
+  { id: '2-040', hanzi: '新', pinyin: 'xīn', arti: 'baru', contoh: '他买了一件新衣服。', terjemahan: 'Dia membeli baju baru.', level: 2 },
+  { id: '2-041', hanzi: '旧', pinyin: 'jiù', arti: 'lama / usang', contoh: '这是一本旧书。', terjemahan: 'Ini adalah buku lama.', level: 2 },
+  { id: '2-042', hanzi: '贵', pinyin: 'guì', arti: 'mahal', contoh: '这件衣服太贵了。', terjemahan: 'Baju ini terlalu mahal.', level: 2 },
+  { id: '2-043', hanzi: '便宜', pinyin: 'piányi', arti: 'murah', contoh: '这里的东西很便宜。', terjemahan: 'Barang-barang di sini sangat murah.', level: 2 },
+  { id: '2-044', hanzi: '干净', pinyin: 'gānjìng', arti: 'bersih', contoh: '这个房间很干净。', terjemahan: 'Ruangan ini sangat bersih.', level: 2 },
+  { id: '2-045', hanzi: '饿', pinyin: 'è', arti: 'lapar', contoh: '我很饿，想吃东西。', terjemahan: 'Saya sangat lapar, ingin makan sesuatu.', level: 2 },
+  { id: '2-046', hanzi: '渴', pinyin: 'kě', arti: 'haus', contoh: '运动后我很渴。', terjemahan: 'Setelah olahraga saya sangat haus.', level: 2 },
+
+  // ── Benda & Tempat ───────────────────────────────────────────
+  { id: '2-047', hanzi: '教室', pinyin: 'jiàoshì', arti: 'ruang kelas', contoh: '同学们在教室上课。', terjemahan: 'Para siswa belajar di ruang kelas.', level: 2 },
+  { id: '2-048', hanzi: '宿舍', pinyin: 'sùshè', arti: 'asrama', contoh: '我住在学校宿舍。', terjemahan: 'Saya tinggal di asrama sekolah.', level: 2 },
+  { id: '2-049', hanzi: '图书馆', pinyin: 'túshūguǎn', arti: 'perpustakaan', contoh: '我去图书馆借书。', terjemahan: 'Saya pergi ke perpustakaan untuk meminjam buku.', level: 2 },
+  { id: '2-050', hanzi: '超市', pinyin: 'chāoshì', arti: 'supermarket', contoh: '我去超市买东西。', terjemahan: 'Saya pergi ke supermarket untuk belanja.', level: 2 },
+  { id: '2-051', hanzi: '公园', pinyin: 'gōngyuán', arti: 'taman', contoh: '我喜欢在公园散步。', terjemahan: 'Saya suka jalan-jalan di taman.', level: 2 },
+  { id: '2-052', hanzi: '机场', pinyin: 'jīchǎng', arti: 'bandara', contoh: '我去机场接他。', terjemahan: 'Saya pergi ke bandara menjemputnya.', level: 2 },
+  { id: '2-053', hanzi: '火车站', pinyin: 'huǒchē zhàn', arti: 'stasiun kereta', contoh: '火车站在哪里？', terjemahan: 'Stasiun kereta di mana?', level: 2 },
+  { id: '2-054', hanzi: '旅馆', pinyin: 'lǚguǎn', arti: 'penginapan / hotel', contoh: '我们住在旅馆里。', terjemahan: 'Kita menginap di hotel.', level: 2 },
+  { id: '2-055', hanzi: '商店', pinyin: 'shāngdiàn', arti: 'toko', contoh: '这家商店卖很多东西。', terjemahan: 'Toko ini menjual banyak barang.', level: 2 },
+  { id: '2-056', hanzi: '饭馆', pinyin: 'fànguǎn', arti: 'restoran', contoh: '我们去饭馆吃饭吧。', terjemahan: 'Mari kita pergi makan di restoran.', level: 2 },
+  { id: '2-057', hanzi: '房间', pinyin: 'fángjiān', arti: 'kamar', contoh: '这个房间很大。', terjemahan: 'Kamar ini sangat besar.', level: 2 },
+  { id: '2-058', hanzi: '窗户', pinyin: 'chuānghù', arti: 'jendela', contoh: '请打开窗户。', terjemahan: 'Tolong buka jendelanya.', level: 2 },
+  { id: '2-059', hanzi: '桌子', pinyin: 'zhuōzi', arti: 'meja', contoh: '书放在桌子上。', terjemahan: 'Buku diletakkan di atas meja.', level: 2 },
+  { id: '2-060', hanzi: '椅子', pinyin: 'yǐzi', arti: 'kursi', contoh: '请坐椅子。', terjemahan: 'Silakan duduk di kursi.', level: 2 },
+
+  // ── Makanan & Belanja ────────────────────────────────────────
+  { id: '2-061', hanzi: '面条', pinyin: 'miàntiáo', arti: 'mie', contoh: '我喜欢吃面条。', terjemahan: 'Saya suka makan mie.', level: 2 },
+  { id: '2-062', hanzi: '饺子', pinyin: 'jiǎozi', arti: 'pangsit / dumpling', contoh: '春节吃饺子。', terjemahan: 'Saat Tahun Baru Imlek makan pangsit.', level: 2 },
+  { id: '2-063', hanzi: '鸡蛋', pinyin: 'jīdàn', arti: 'telur ayam', contoh: '早饭我吃了两个鸡蛋。', terjemahan: 'Saat sarapan saya makan dua telur.', level: 2 },
+  { id: '2-064', hanzi: '牛奶', pinyin: 'niúnǎi', arti: 'susu sapi', contoh: '每天早上喝牛奶。', terjemahan: 'Setiap pagi minum susu.', level: 2 },
+  { id: '2-065', hanzi: '咖啡', pinyin: 'kāfēi', arti: 'kopi', contoh: '我每天喝一杯咖啡。', terjemahan: 'Saya minum secangkir kopi setiap hari.', level: 2 },
+  { id: '2-066', hanzi: '西瓜', pinyin: 'xīguā', arti: 'semangka', contoh: '夏天吃西瓜很好。', terjemahan: 'Makan semangka di musim panas sangat enak.', level: 2 },
+  { id: '2-067', hanzi: '香蕉', pinyin: 'xiāngjiāo', arti: 'pisang', contoh: '我每天吃一根香蕉。', terjemahan: 'Saya makan satu pisang setiap hari.', level: 2 },
+  { id: '2-068', hanzi: '菜', pinyin: 'cài', arti: 'sayuran / lauk', contoh: '今天的菜很好吃。', terjemahan: 'Lauk hari ini sangat enak.', level: 2 },
+
+  // ── Pakaian & Penampilan ────────────────────────────────────
+  { id: '2-069', hanzi: '衣服', pinyin: 'yīfu', arti: 'pakaian / baju', contoh: '她今天穿的衣服很漂亮。', terjemahan: 'Baju yang dia pakai hari ini sangat cantik.', level: 2 },
+  { id: '2-070', hanzi: '裤子', pinyin: 'kùzi', arti: 'celana', contoh: '他穿蓝色裤子。', terjemahan: 'Dia memakai celana biru.', level: 2 },
+  { id: '2-071', hanzi: '鞋', pinyin: 'xié', arti: 'sepatu', contoh: '这双鞋很舒服。', terjemahan: 'Sepatu ini sangat nyaman.', level: 2 },
+  { id: '2-072', hanzi: '帽子', pinyin: 'màozi', arti: 'topi', contoh: '他戴着一顶帽子。', terjemahan: 'Dia memakai topi.', level: 2 },
+
+  // ── Waktu & Frekuensi ────────────────────────────────────────
+  { id: '2-073', hanzi: '以前', pinyin: 'yǐqián', arti: 'sebelumnya / dulu', contoh: '以前他是老师。', terjemahan: 'Dulu dia adalah guru.', level: 2 },
+  { id: '2-074', hanzi: '以后', pinyin: 'yǐhòu', arti: 'setelah / nanti', contoh: '以后我要去中国。', terjemahan: 'Nanti saya ingin pergi ke Tiongkok.', level: 2 },
+  { id: '2-075', hanzi: '最近', pinyin: 'zuìjìn', arti: 'belakangan ini / baru-baru ini', contoh: '最近我很忙。', terjemahan: 'Belakangan ini saya sangat sibuk.', level: 2 },
+  { id: '2-076', hanzi: '经常', pinyin: 'jīngcháng', arti: 'sering / selalu', contoh: '他经常迟到。', terjemahan: 'Dia sering terlambat.', level: 2 },
+  { id: '2-077', hanzi: '有时候', pinyin: 'yǒu shíhou', arti: 'kadang-kadang', contoh: '有时候我去图书馆。', terjemahan: 'Kadang-kadang saya pergi ke perpustakaan.', level: 2 },
+  { id: '2-078', hanzi: '马上', pinyin: 'mǎshàng', arti: 'segera / sebentar lagi', contoh: '他马上就来。', terjemahan: 'Dia segera datang.', level: 2 },
+  { id: '2-079', hanzi: '终于', pinyin: 'zhōngyú', arti: 'akhirnya', contoh: '终于到了！', terjemahan: 'Akhirnya tiba!', level: 2 },
+  { id: '2-080', hanzi: '一直', pinyin: 'yīzhí', arti: 'terus / selalu / lurus', contoh: '一直往前走。', terjemahan: 'Terus jalan lurus ke depan.', level: 2 },
+
+  // ── Pekerjaan & Kehidupan ────────────────────────────────────
+  { id: '2-081', hanzi: '上班', pinyin: 'shàng bān', arti: 'masuk kerja / berangkat kerja', contoh: '我每天八点上班。', terjemahan: 'Saya masuk kerja jam delapan setiap hari.', level: 2 },
+  { id: '2-082', hanzi: '下班', pinyin: 'xià bān', arti: 'pulang kerja', contoh: '他六点下班。', terjemahan: 'Dia pulang kerja jam enam.', level: 2 },
+  { id: '2-083', hanzi: '上课', pinyin: 'shàng kè', arti: 'masuk kelas / mengikuti pelajaran', contoh: '我们八点上课。', terjemahan: 'Kita masuk kelas jam delapan.', level: 2 },
+  { id: '2-084', hanzi: '下课', pinyin: 'xià kè', arti: 'selesai pelajaran', contoh: '下课后我去图书馆。', terjemahan: 'Setelah kelas saya pergi ke perpustakaan.', level: 2 },
+  { id: '2-085', hanzi: '作业', pinyin: 'zuòyè', arti: 'pekerjaan rumah (PR)', contoh: '我还没做作业。', terjemahan: 'Saya belum mengerjakan PR.', level: 2 },
+  { id: '2-086', hanzi: '考试', pinyin: 'kǎoshì', arti: 'ujian / tes', contoh: '下周有考试。', terjemahan: 'Minggu depan ada ujian.', level: 2 },
+  { id: '2-087', hanzi: '练习', pinyin: 'liànxí', arti: 'berlatih / latihan', contoh: '每天练习汉语。', terjemahan: 'Berlatih bahasa Mandarin setiap hari.', level: 2 },
+  { id: '2-088', hanzi: '问题', pinyin: 'wèntí', arti: 'pertanyaan / masalah', contoh: '你有什么问题？', terjemahan: 'Apakah kamu punya pertanyaan?', level: 2 },
+
+  // ── Kesehatan & Tubuh ────────────────────────────────────────
+  { id: '2-089', hanzi: '身体', pinyin: 'shēntǐ', arti: 'tubuh / kesehatan', contoh: '他的身体很好。', terjemahan: 'Kesehatannya sangat baik.', level: 2 },
+  { id: '2-090', hanzi: '生病', pinyin: 'shēng bìng', arti: 'sakit (jatuh sakit)', contoh: '他生病了，不来上课。', terjemahan: 'Dia sakit, tidak masuk kelas.', level: 2 },
+  { id: '2-091', hanzi: '药', pinyin: 'yào', arti: 'obat', contoh: '你要吃药了。', terjemahan: 'Kamu harus minum obat.', level: 2 },
+  { id: '2-092', hanzi: '手', pinyin: 'shǒu', arti: 'tangan', contoh: '洗手再吃饭。', terjemahan: 'Cuci tangan sebelum makan.', level: 2 },
+  { id: '2-093', hanzi: '脸', pinyin: 'liǎn', arti: 'wajah / muka', contoh: '洗脸再出门。', terjemahan: 'Cuci muka sebelum keluar.', level: 2 },
+
+  // ── Kata Penghubung & Keterangan ────────────────────────────
+  { id: '2-094', hanzi: '因为', pinyin: 'yīnwèi', arti: 'karena', contoh: '因为下雨，我没出门。', terjemahan: 'Karena hujan, saya tidak keluar.', level: 2 },
+  { id: '2-095', hanzi: '所以', pinyin: 'suǒyǐ', arti: 'oleh karena itu / jadi', contoh: '我累了，所以想休息。', terjemahan: 'Saya lelah, jadi ingin istirahat.', level: 2 },
+  { id: '2-096', hanzi: '但是', pinyin: 'dànshì', arti: 'tetapi / namun', contoh: '他很聪明，但是很懒。', terjemahan: 'Dia sangat cerdas, tetapi sangat malas.', level: 2 },
+  { id: '2-097', hanzi: '如果', pinyin: 'rúguǒ', arti: 'jika / kalau', contoh: '如果明天下雨，我就不去了。', terjemahan: 'Kalau besok hujan, saya tidak jadi pergi.', level: 2 },
+  { id: '2-098', hanzi: '虽然', pinyin: 'suīrán', arti: 'meskipun / walaupun', contoh: '虽然很难，但我会努力。', terjemahan: 'Meskipun sulit, saya akan berusaha.', level: 2 },
+  { id: '2-099', hanzi: '而且', pinyin: 'érqiě', arti: 'selain itu / dan juga', contoh: '他高而且帅。', terjemahan: 'Dia tinggi dan juga tampan.', level: 2 },
+  { id: '2-100', hanzi: '或者', pinyin: 'huòzhě', arti: 'atau (dalam pernyataan)', contoh: '你要茶或者咖啡？', terjemahan: 'Kamu mau teh atau kopi?', level: 2 },
+  { id: '2-101', hanzi: '只', pinyin: 'zhǐ', arti: 'hanya / saja', contoh: '我只喝水。', terjemahan: 'Saya hanya minum air.', level: 2 },
+  { id: '2-102', hanzi: '已经', pinyin: 'yǐjīng', arti: 'sudah', contoh: '他已经走了。', terjemahan: 'Dia sudah pergi.', level: 2 },
+  { id: '2-103', hanzi: '还是', pinyin: 'háishi', arti: 'atau (dalam pertanyaan) / tetap saja', contoh: '你要茶还是咖啡？', terjemahan: 'Kamu mau teh atau kopi?', level: 2 },
+  { id: '2-104', hanzi: '一样', pinyin: 'yīyàng', arti: 'sama', contoh: '这两个一样大。', terjemahan: 'Kedua benda ini sama besarnya.', level: 2 },
+  { id: '2-105', hanzi: '不同', pinyin: 'bùtóng', arti: 'berbeda', contoh: '我们的想法不同。', terjemahan: 'Pemikiran kita berbeda.', level: 2 },
+
+  // ── Perasaan & Ekspresi ──────────────────────────────────────
+  { id: '2-106', hanzi: '难过', pinyin: 'nánguò', arti: 'sedih', contoh: '听到这个消息我很难过。', terjemahan: 'Saya sangat sedih mendengar berita ini.', level: 2 },
+  { id: '2-107', hanzi: '生气', pinyin: 'shēng qì', arti: 'marah', contoh: '他生气了，不说话。', terjemahan: 'Dia marah, tidak mau bicara.', level: 2 },
+  { id: '2-108', hanzi: '害怕', pinyin: 'hàipà', arti: 'takut', contoh: '我害怕蛇。', terjemahan: 'Saya takut ular.', level: 2 },
+  { id: '2-109', hanzi: '担心', pinyin: 'dānxīn', arti: 'khawatir', contoh: '妈妈担心我。', terjemahan: 'Ibu khawatir tentang saya.', level: 2 },
+  { id: '2-110', hanzi: '开心', pinyin: 'kāixīn', arti: 'bahagia / senang', contoh: '今天我很开心。', terjemahan: 'Hari ini saya sangat senang.', level: 2 },
+
+  // ── Alam & Lingkungan ────────────────────────────────────────
+  { id: '2-111', hanzi: '山', pinyin: 'shān', arti: 'gunung', contoh: '这座山很高。', terjemahan: 'Gunung ini sangat tinggi.', level: 2 },
+  { id: '2-112', hanzi: '河', pinyin: 'hé', arti: 'sungai', contoh: '这条河很长。', terjemahan: 'Sungai ini sangat panjang.', level: 2 },
+  { id: '2-113', hanzi: '花', pinyin: 'huā', arti: 'bunga', contoh: '春天花开了。', terjemahan: 'Di musim semi bunga mekar.', level: 2 },
+  { id: '2-114', hanzi: '树', pinyin: 'shù', arti: 'pohon', contoh: '公园里有很多树。', terjemahan: 'Di taman ada banyak pohon.', level: 2 },
+  { id: '2-115', hanzi: '太阳', pinyin: 'tàiyáng', arti: 'matahari', contoh: '今天太阳很大。', terjemahan: 'Hari ini matahari sangat terik.', level: 2 },
+
+  // ── Binatang ─────────────────────────────────────────────────
+  { id: '2-116', hanzi: '猫', pinyin: 'māo', arti: 'kucing', contoh: '我家有两只猫。', terjemahan: 'Di rumah saya ada dua ekor kucing.', level: 2 },
+  { id: '2-117', hanzi: '狗', pinyin: 'gǒu', arti: 'anjing', contoh: '那只狗很可爱。', terjemahan: 'Anjing itu sangat lucu.', level: 2 },
+  { id: '2-118', hanzi: '鸟', pinyin: 'niǎo', arti: 'burung', contoh: '树上有很多鸟。', terjemahan: 'Di atas pohon ada banyak burung.', level: 2 },
+  { id: '2-119', hanzi: '鱼', pinyin: 'yú', arti: 'ikan', contoh: '我喜欢吃鱼。', terjemahan: 'Saya suka makan ikan.', level: 2 },
+  { id: '2-120', hanzi: '熊猫', pinyin: 'xióngmāo', arti: 'panda', contoh: '熊猫是中国的国宝。', terjemahan: 'Panda adalah harta nasional Tiongkok.', level: 2 },
+]
