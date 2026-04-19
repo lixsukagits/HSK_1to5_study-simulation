@@ -25,28 +25,27 @@ export const storage = {
   remove(key) {
     try {
       localStorage.removeItem(PREFIX + key)
-    } catch {
-      // silent fail
-    }
+    } catch { /* silent fail */ }
   },
 
   clear() {
     try {
       Object.keys(localStorage)
-        .filter((k) => k.startsWith(PREFIX))
-        .forEach((k) => localStorage.removeItem(k))
-    } catch {
-      // silent fail
-    }
+        .filter(k => k.startsWith(PREFIX))
+        .forEach(k => localStorage.removeItem(k))
+    } catch { /* silent fail */ }
   },
 }
 
-// ─── Key-key yang dipakai di seluruh app ──────────────────────
+// ─── Storage Keys ─────────────────────────────────────────────
 export const STORAGE_KEYS = {
-  PROGRESS:       'progress',      // { level: { seen: [], mastered: [] } }
-  STREAK:         'streak',        // { count, lastDate, longestStreak }
-  SETTINGS:       'settings',      // { theme, dailyTarget, quizMode, ... }
-  QUIZ_HISTORY:   'quiz_history',  // array hasil kuis
-  BOOKMARKS:      'bookmarks',     // array id kata yang di-bookmark
-  DAILY_LOG:      'daily_log',     // { 'YYYY-MM-DD': { studied: n, correct: n } }
+  PROGRESS:     'progress',      // { level: { seen: [], mastered: [] } }
+  STREAK:       'streak',        // { count, lastDate, longestStreak }
+  SETTINGS:     'settings',      // pengaturan user
+  QUIZ_HISTORY: 'quiz_history',  // array hasil kuis
+  BOOKMARKS:    'bookmarks',     // Set id kata yang di-bookmark
+  DAILY_LOG:    'daily_log',     // { 'YYYY-MM-DD': { studied, correct } }
+  SRS:          'srs',           // { wordId: { interval, easeFactor, nextReview, reps } }
+  ACHIEVEMENTS: 'achievements',  // { achievementId: { unlockedAt } }
+  XP:           'xp',            // { total, weeklyLog: { 'YYYY-WW': xp } }
 }
