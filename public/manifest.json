@@ -1,0 +1,25 @@
+{
+  "name": "HSK 3.0 Belajar Mandarin",
+  "short_name": "HSK Belajar",
+  "description": "Belajar kosakata HSK 3.0 dengan flash card, kuis, dan SRS",
+  "start_url": "/hsk_1to5_study-simulation/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#ed1515",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23111'/%3E%3Ctext x='96' y='140' font-family='serif' font-size='120' text-anchor='middle' fill='%23ed1515'%3E汉%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23111'/%3E%3Ctext x='256' y='370' font-family='serif' font-size='320' text-anchor='middle' fill='%23ed1515'%3E汉%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "lang": "id"
+}

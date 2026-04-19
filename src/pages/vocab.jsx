@@ -40,9 +40,19 @@ export function Vocab() {
         v.hanzi?.includes(q) || v.pinyin?.toLowerCase().includes(q) || v.arti?.toLowerCase().includes(q)
       )
     }
-    if (filter === 'mastered')  list = list.filter(v => masteredSet.has(v.id))
-    if (filter === 'unseen')    list = list.filter(v => !seenSet.has(v.id))
-    if (filter === 'bookmarked')list = list.filter(v => bookmarkSet.has(v.id))
+    if (filter === 'mastered')   list = list.filter(v => masteredSet.has(v.id))
+    if (filter === 'unseen')     list = list.filter(v => !seenSet.has(v.id))
+    if (filter === 'bookmarked') list = list.filter(v => bookmarkSet.has(v.id))
+
+    // Yang sudah dicentang turun ke bawah
+    if (filter !== 'mastered') {
+      list = [...list].sort((a, b) => {
+        const aMastered = masteredSet.has(a.id) ? 1 : 0
+        const bMastered = masteredSet.has(b.id) ? 1 : 0
+        return aMastered - bMastered
+      })
+    }
+
     return list
   }, [vocab, search, filter, lvlPrg, bookmarkSet])
 
