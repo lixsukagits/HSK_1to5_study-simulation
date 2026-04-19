@@ -1,6 +1,7 @@
 import { NavLink, Link } from 'react-router-dom'
 import { storage, STORAGE_KEYS } from '../../utils/storage'
 import { useAchievements } from '../../hooks/useachievements'
+import { useAuthContext } from '../../context/authcontext'
 
 const NAV_ITEMS = [
   { to: '/',           label: 'Beranda',    Icon: HomeIcon     },
@@ -24,7 +25,8 @@ function ProgressIcon({ active }) {
 
 export default function Navbar() {
   const streak = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
-  const { xp, getRank } = useAchievements()
+  const { userId } = useAuthContext()
+  const { xp, getRank } = useAchievements(userId)
   const rank = getRank(xp)
 
   return (

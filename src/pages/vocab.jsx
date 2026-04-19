@@ -5,6 +5,7 @@ import { hskData } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useBookmark } from '../hooks/usebookmark'
+import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
 import { BookmarkButton } from '../components/ui/bookmarkbutton'
 import { initTTS } from '../utils/tts'
@@ -19,9 +20,10 @@ export function Vocab() {
   const lvl   = HSK_LEVELS.find(l => l.level === Number(level)) || HSK_LEVELS[0]
   const vocab = hskData[lvl.level] || []
 
-  const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress()
-  const { recordActivity } = useStreak()
-  const { bookmarkSet, toggle: toggleBookmark } = useBookmark()
+  const { userId } = useAuthContext()
+  const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
+  const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
   const lvlPrg      = progress[lvl.level] || { seen: [], mastered: [] }
   const masteredSet = new Set(lvlPrg.mastered || [])
@@ -40,19 +42,9 @@ export function Vocab() {
         v.hanzi?.includes(q) || v.pinyin?.toLowerCase().includes(q) || v.arti?.toLowerCase().includes(q)
       )
     }
-    if (filter === 'mastered')   list = list.filter(v => masteredSet.has(v.id))
-    if (filter === 'unseen')     list = list.filter(v => !seenSet.has(v.id))
-    if (filter === 'bookmarked') list = list.filter(v => bookmarkSet.has(v.id))
-
-    // Yang sudah dicentang turun ke bawah
-    if (filter !== 'mastered') {
-      list = [...list].sort((a, b) => {
-        const aMastered = masteredSet.has(a.id) ? 1 : 0
-        const bMastered = masteredSet.has(b.id) ? 1 : 0
-        return aMastered - bMastered
-      })
-    }
-
+    if (filter === 'mastered')  list = list.filter(v => masteredSet.has(v.id))
+    if (filter === 'unseen')    list = list.filter(v => !seenSet.has(v.id))
+    if (filter === 'bookmarked')list = list.filter(v => bookmarkSet.has(v.id))
     return list
   }, [vocab, search, filter, lvlPrg, bookmarkSet])
 

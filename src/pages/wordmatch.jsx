@@ -5,6 +5,7 @@ import { hskData } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
+import { useAuthContext } from '../context/authcontext'
 import { shuffle } from '../utils/quizgenerator'
 import { AudioButton } from '../components/ui/audiobutton'
 import { initTTS } from '../utils/tts'
@@ -24,8 +25,9 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 
 export function WordMatch() {
   const { settings }    = useSettings()
-  const { logActivity } = useProgress()
-  const { recordActivity } = useStreak()
+  const { userId } = useAuthContext()
+  const { logActivity } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
   const [started,   setStarted]   = useState(false)

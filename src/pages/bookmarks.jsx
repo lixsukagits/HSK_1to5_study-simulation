@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useBookmark } from '../hooks/usebookmark'
 import { useProgress } from '../hooks/useprogress'
+import { useAuthContext } from '../context/authcontext'
 import { useStreak } from '../hooks/usestreak'
 import { allWords } from '../data'
 import { HSK_LEVELS } from '../constants/hsklevels'
@@ -9,9 +10,10 @@ import { AudioButton } from '../components/ui/audiobutton'
 import { BookmarkButton } from '../components/ui/bookmarkbutton'
 
 export function Bookmarks() {
-  const { bookmarks, bookmarkSet, toggle } = useBookmark()
-  const { markSeen, markMastered, unmarkMastered, logActivity, progress } = useProgress()
-  const { recordActivity } = useStreak()
+  const { userId } = useAuthContext()
+  const { bookmarks, bookmarkSet, toggle } = useBookmark(userId)
+  const { markSeen, markMastered, unmarkMastered, logActivity, progress } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
 
   const [search,  setSearch]  = useState('')
   const [filter,  setFilter]  = useState('all')  // all | mastered | unmastered

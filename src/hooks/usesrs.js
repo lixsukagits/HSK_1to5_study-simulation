@@ -1,39 +1,42 @@
 import { useState, useCallback } from 'react'
-import { storage, STORAGE_KEYS } from '../utils/storage'
+import { storage, STORAGE_KEYS, upsertData } from '../utils/storage'
 import { sm2, getDueWords, GRADE } from '../utils/srs'
 
-export function useSRS() {
+export function useSRS(userId = null) {
   const [srsData, setSrsData] = useState(() =>
     storage.get(STORAGE_KEYS.SRS, {})
   )
 
-  /** Review sebuah kata dengan grade */
   const reviewWord = useCallback((wordId, grade) => {
     setSrsData(prev => {
-      const card = prev[wordId] || {}
-      const next = sm2(card, grade)
+      const card    = prev[wordId] || {}
+      const next    = sm2(card, grade)
       const updated = { ...prev, [wordId]: { ...card, ...next } }
       storage.set(STORAGE_KEYS.SRS, updated)
+
+      if (userId) {
+        upsertData('user_srs', {
+          user_id: userId, word_id: wordId,
+          interval: next.interval, ease_factor: next.easeFactor,
+          next_review: next.nextReview, reps: next.reps,
+        }).catch(e => console.warn('[srs] sync:', e))
+      }
       return updated
     })
-  }, [])
+  }, [userId])
 
-  /** Ambil kata yang due dari pool */
   const getDue = useCallback((words) => {
     return getDueWords(words, srsData)
   }, [srsData])
 
-  /** Info SRS satu kata */
   const getCardInfo = useCallback((wordId) => {
     return srsData[wordId] || null
   }, [srsData])
 
-  /** Berapa kata yang due hari ini dari pool */
   const countDue = useCallback((words) => {
     return getDueWords(words, srsData).length
   }, [srsData])
 
-  /** Reset SRS satu kata */
   const resetCard = useCallback((wordId) => {
     setSrsData(prev => {
       const { [wordId]: _, ...rest } = prev

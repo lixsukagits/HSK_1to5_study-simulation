@@ -1,4 +1,5 @@
 // Wrapper localStorage yang aman — tidak crash jika storage penuh / private mode
+// Tetap dipakai sebagai cache lokal dan fallback offline
 
 const PREFIX = 'hsk_'
 
@@ -43,9 +44,72 @@ export const STORAGE_KEYS = {
   STREAK:       'streak',        // { count, lastDate, longestStreak }
   SETTINGS:     'settings',      // pengaturan user
   QUIZ_HISTORY: 'quiz_history',  // array hasil kuis
-  BOOKMARKS:    'bookmarks',     // Set id kata yang di-bookmark
+  BOOKMARKS:    'bookmarks',     // array id kata yang di-bookmark
   DAILY_LOG:    'daily_log',     // { 'YYYY-MM-DD': { studied, correct } }
   SRS:          'srs',           // { wordId: { interval, easeFactor, nextReview, reps } }
   ACHIEVEMENTS: 'achievements',  // { achievementId: { unlockedAt } }
-  XP:           'xp',            // { total, weeklyLog: { 'YYYY-WW': xp } }
+  XP:           'xp',            // { total }
+}
+
+// ─── Supabase Abstraction Layer ────────────────────────────────
+// Dipakai oleh hooks untuk sync ke Supabase (online) atau queue (offline)
+
+import { supabase } from '../lib/supabase'
+import { enqueue } from '../lib/offlinequeue'
+
+export function isOnline() {
+  return navigator.onLine
+}
+
+/**
+ * Upsert data ke Supabase (atau queue jika offline)
+ * @param {string} table - nama tabel Supabase
+ * @param {object} payload - harus sudah include user_id
+ */
+export async function upsertData(table, payload) {
+  if (isOnline()) {
+    const { error } = await supabase.from(table).upsert(payload)
+    if (error) {
+      console.error(`[storage] Gagal upsert ke ${table}:`, error)
+      throw error
+    }
+  } else {
+    await enqueue(table, 'upsert', payload)
+  }
+}
+
+/**
+ * Delete data dari Supabase (atau queue jika offline)
+ */
+export async function deleteData(table, match) {
+  if (isOnline()) {
+    const { error } = await supabase.from(table).delete().match(match)
+    if (error) {
+      console.error(`[storage] Gagal delete dari ${table}:`, error)
+      throw error
+    }
+  } else {
+    await enqueue(table, 'delete', match)
+  }
+}
+
+/**
+ * Fetch data dari Supabase, fallback ke localStorage jika offline/error
+ */
+export async function fetchData(table, userId, localKey = null) {
+  if (!isOnline() && localKey) {
+    return storage.get(localKey, null)
+  }
+
+  const { data, error } = await supabase
+    .from(table)
+    .select('*')
+    .eq('user_id', userId)
+
+  if (error) {
+    console.error(`[storage] Gagal fetch dari ${table}:`, error)
+    return localKey ? storage.get(localKey, null) : null
+  }
+
+  return data
 }

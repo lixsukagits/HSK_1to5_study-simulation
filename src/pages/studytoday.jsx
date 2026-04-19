@@ -6,6 +6,7 @@ import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
 import { useBookmark } from '../hooks/usebookmark'
+import { useAuthContext } from '../context/authcontext'
 import { storage, STORAGE_KEYS } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { shuffle } from '../utils/quizgenerator'
@@ -239,9 +240,10 @@ function SessionResult({ stats, onRestart, streakCount }) {
 export function StudyToday() {
   const navigate  = useNavigate()
   const { settings }  = useSettings()
-  const { progress, markSeen, markMastered, logActivity } = useProgress()
-  const { streak, recordActivity } = useStreak()
-  const { bookmarkSet, toggle: toggleBookmark } = useBookmark()
+  const { userId } = useAuthContext()
+  const { progress, markSeen, markMastered, logActivity } = useProgress(userId)
+  const { streak, recordActivity } = useStreak(userId)
+  const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
   const todayLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})[toDateKey()] || { studied: 0 }
   const target    = settings.dailyTarget || 20

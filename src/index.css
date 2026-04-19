@@ -2,151 +2,386 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Base & Reset ─────────────────────────────────────────── */
+/* ─── Base ──────────────────────────────────────────────────── */
 @layer base {
-  * {
-    @apply border-surface-border;
+  *, *::before, *::after {
+    box-sizing: border-box;
   }
 
   html {
-    @apply scroll-smooth;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-surface text-white font-sans antialiased;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(237, 21, 21, 0.08), transparent),
-      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(167, 139, 250, 0.04), transparent);
+    @apply bg-surface text-white font-sans;
     min-height: 100vh;
+    /* Subtle ambient glow dari atas — merah China */
+    background-image:
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(237,21,21,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 80% 40% at 90% 100%, rgba(167,139,250,0.04) 0%, transparent 50%);
   }
 
-  /* Scrollbar custom */
-  ::-webkit-scrollbar {
-    width: 6px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-surface;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-surface-border rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary-700;
+  /* Noise grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   }
 
-  /* Seleksi teks */
-  ::selection {
-    @apply bg-primary-700 text-white;
-  }
+  /* z stack semua konten di atas noise */
+  #root { position: relative; z-index: 1; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar       { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: #080808; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #ed1515; }
+
+  /* Selection */
+  ::selection { background: rgba(237,21,21,0.3); color: #fff; }
 }
 
-/* ─── Component Utilities ──────────────────────────────────── */
+/* ─── Components ────────────────────────────────────────────── */
 @layer components {
 
-  /* Kartu utama */
+  /* ── Card ── */
   .card {
-    @apply bg-surface-card border border-surface-border rounded-2xl shadow-card;
+    @apply bg-surface-card border border-surface-border rounded-2xl;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
   }
 
-  /* Tombol primer merah */
+  .card-hover {
+    @apply card transition-all duration-300 cursor-pointer;
+  }
+  .card-hover:hover {
+    @apply border-surface-border-light -translate-y-1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ── Buttons ── */
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-500 active:bg-primary-700
-           text-white font-medium px-5 py-2.5 rounded-xl
-           transition-all duration-200 ease-out
-           hover:shadow-glow-red active:scale-95
-           disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm
+           bg-primary-600 text-white rounded-xl px-5 py-2.5
+           transition-all duration-200 active:scale-[0.97]
+           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+    box-shadow: 0 0 0 0 rgba(237,21,21,0);
+  }
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-primary-500;
+    box-shadow: 0 0 24px rgba(237,21,21,0.35), 0 4px 12px rgba(237,21,21,0.2);
   }
 
-  /* Tombol sekunder / outline */
   .btn-ghost {
-    @apply bg-transparent hover:bg-white/5 active:bg-white/10
-           text-white/70 hover:text-white
-           border border-surface-border hover:border-white/20
-           font-medium px-5 py-2.5 rounded-xl
-           transition-all duration-200 ease-out
-           active:scale-95;
+    @apply inline-flex items-center justify-center gap-2 font-medium text-sm
+           text-white/60 hover:text-white rounded-xl px-5 py-2.5
+           border border-surface-border hover:border-surface-border-light
+           hover:bg-white/5 transition-all duration-200 active:scale-[0.97]
+           disabled:opacity-30 disabled:cursor-not-allowed;
   }
 
-  /* Badge level HSK */
-  .badge-level-1 { @apply bg-level-1/15 text-level-1 border border-level-1/30; }
-  .badge-level-2 { @apply bg-level-2/15 text-level-2 border border-level-2/30; }
-  .badge-level-3 { @apply bg-level-3/15 text-level-3 border border-level-3/30; }
-  .badge-level-4 { @apply bg-level-4/15 text-level-4 border border-level-4/30; }
-  .badge-level-5 { @apply bg-level-5/15 text-level-5 border border-level-5/30; }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 font-semibold text-sm
+           bg-red-950/60 text-red-400 border border-red-900/40 rounded-xl px-4 py-2
+           hover:bg-red-900/60 transition-all duration-200 active:scale-[0.97];
+  }
 
-  /* Badge universal */
+  /* ── Badge ── */
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
   }
 
-  /* Karakter Hanzi besar */
-  .hanzi-display {
-    @apply font-hanzi font-bold leading-none select-none;
+  .badge-level-1 {
+    background: rgba(74,222,128,0.12);
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.25);
+  }
+  .badge-level-2 {
+    background: rgba(96,165,250,0.12);
+    color: #60a5fa;
+    border: 1px solid rgba(96,165,250,0.25);
+  }
+  .badge-level-3 {
+    background: rgba(245,158,11,0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245,158,11,0.25);
+  }
+  .badge-level-4 {
+    background: rgba(244,114,182,0.12);
+    color: #f472b6;
+    border: 1px solid rgba(244,114,182,0.25);
+  }
+  .badge-level-5 {
+    background: rgba(167,139,250,0.12);
+    color: #a78bfa;
+    border: 1px solid rgba(167,139,250,0.25);
   }
 
-  /* Pinyin styling */
-  .pinyin {
-    @apply text-primary-400 font-sans tracking-wide;
-  }
-
-  /* Input */
+  /* ── Input ── */
   .input {
     @apply bg-surface-card border border-surface-border rounded-xl px-4 py-2.5
-           text-white placeholder-white/30 outline-none
-           focus:border-primary-600 focus:ring-1 focus:ring-primary-600/50
+           text-white text-sm placeholder-white/20 outline-none
            transition-all duration-200;
   }
-
-  /* Progress bar track */
-  .progress-track {
-    @apply h-2 bg-surface-border rounded-full overflow-hidden;
+  .input:focus {
+    @apply border-primary-600/70;
+    box-shadow: 0 0 0 3px rgba(237,21,21,0.12);
   }
 
+  /* ── Progress ── */
+  .progress-track {
+    @apply h-2 rounded-full overflow-hidden;
+    background: rgba(255,255,255,0.06);
+  }
   .progress-fill {
     @apply h-full rounded-full transition-all duration-700 ease-out;
-    background: linear-gradient(90deg, #ed1515, #f59e0b);
+    background: linear-gradient(90deg, #c80d0d, #ed1515, #f59e0b);
+    background-size: 200% 100%;
   }
 
-  /* Divider dengan teks */
-  .divider {
-    @apply flex items-center gap-3 text-white/20 text-sm;
+  /* ── Text gradient ── */
+  .text-gradient-red {
+    background: linear-gradient(135deg, #ff6262, #ed1515, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  .divider::before,
-  .divider::after {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #fcd34d, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    @apply text-white/30 text-[10px] font-bold tracking-[0.15em] uppercase;
+  }
+
+  /* ── Divider ── */
+  .divider {
+    @apply flex items-center gap-3 text-white/20 text-xs;
+  }
+  .divider::before, .divider::after {
     content: '';
     @apply flex-1 border-t border-surface-border;
-  }
-
-  /* Glow text merah */
-  .text-glow {
-    text-shadow: 0 0 20px rgba(237, 21, 21, 0.6);
   }
 }
 
 /* ─── Utilities ─────────────────────────────────────────────── */
 @layer utilities {
-  /* 3D flip card */
-  .perspective { perspective: 1200px; }
-  .preserve-3d { transform-style: preserve-3d; }
-  .backface-hidden { backface-visibility: hidden; }
-  .rotate-y-180 { transform: rotateY(180deg); }
+  /* 3D flip */
+  .perspective      { perspective: 1400px; }
+  .preserve-3d      { transform-style: preserve-3d; }
+  .backface-hidden  { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .rotate-y-180     { transform: rotateY(180deg); }
 
-  /* Gradient teks */
-  .text-gradient-red {
-    @apply bg-gradient-to-r from-primary-400 to-gold-400 bg-clip-text text-transparent;
+  /* Stagger delays */
+  .stagger-1 { animation-delay: 0.04s; }
+  .stagger-2 { animation-delay: 0.08s; }
+  .stagger-3 { animation-delay: 0.12s; }
+  .stagger-4 { animation-delay: 0.16s; }
+  .stagger-5 { animation-delay: 0.20s; }
+
+  /* Glass effect */
+  .glass {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.07);
   }
 
-  /* Noise overlay */
-  .noise-overlay::after {
-    content: '';
-    @apply absolute inset-0 pointer-events-none opacity-30;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  }
+  /* Glow helpers */
+  .glow-red  { box-shadow: 0 0 24px rgba(237,21,21,0.4); }
+  .glow-gold { box-shadow: 0 0 24px rgba(245,158,11,0.4); }
+  .text-glow { text-shadow: 0 0 24px rgba(237,21,21,0.7); }
 
-  /* Animasi masuk stagger */
-  .stagger-1 { animation-delay: 0.05s; }
-  .stagger-2 { animation-delay: 0.10s; }
-  .stagger-3 { animation-delay: 0.15s; }
-  .stagger-4 { animation-delay: 0.20s; }
-  .stagger-5 { animation-delay: 0.25s; }
+  /* Truncate multiline */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ─── Navbar glassmorphism line ─────────────────────────────── */
+.navbar-line {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(237,21,21,0.4), rgba(245,158,11,0.3), transparent);
+}
+
+/* ─── Active nav indicator ──────────────────────────────────── */
+.nav-active-dot {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: #ed1515;
+  border-radius: 99px;
+  box-shadow: 0 0 8px rgba(237,21,21,0.8);
+}
+
+/* ─── Hero decorative hanzi ─────────────────────────────────── */
+.hero-hanzi {
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+  pointer-events: none;
+  color: rgba(255,255,255,0.025);
+  position: absolute;
+}
+
+/* ─── Shimmer skeleton ──────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* ─── Vocab card interaction ────────────────────────────────── */
+.vocab-card {
+  @apply card transition-all duration-200 cursor-pointer;
+}
+.vocab-card:hover {
+  @apply border-surface-border-light;
+  background: rgba(255,255,255,0.03);
+}
+.vocab-card.mastered {
+  border-color: rgba(74,222,128,0.2);
+  background: rgba(74,222,128,0.04);
+}
+
+/* ─── Quiz option states ────────────────────────────────────── */
+.quiz-option {
+  @apply card p-4 text-left font-medium text-sm text-white/70
+         transition-all duration-200 cursor-pointer;
+}
+.quiz-option:hover:not(.answered) {
+  @apply border-surface-border-light text-white;
+  background: rgba(255,255,255,0.04);
+}
+.quiz-option.correct {
+  border-color: rgba(74,222,128,0.5) !important;
+  background: rgba(74,222,128,0.08) !important;
+  color: #4ade80 !important;
+}
+.quiz-option.wrong {
+  border-color: rgba(239,68,68,0.5) !important;
+  background: rgba(239,68,68,0.08) !important;
+  color: #f87171 !important;
+}
+.quiz-option.answered {
+  @apply opacity-50 cursor-default;
+}
+
+/* ─── Mobile bottom nav safe area ───────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .mobile-nav {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0px);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT MODE — semua warna di-override saat html.light
+   ═══════════════════════════════════════════════════════════════ */
+
+html.light {
+  --color-surface:         #f4f4f5;
+  --color-surface-card:    #ffffff;
+  --color-surface-raised:  #fafafa;
+  --color-surface-border:  #e4e4e7;
+  --color-surface-border-light: #d1d5db;
+}
+
+html.light body {
+  background-color: #f4f4f5;
+  color: #18181b;
+  background-image:
+    radial-gradient(ellipse 120% 60% at 50% -10%, rgba(237,21,21,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 40% at 90% 100%, rgba(167,139,250,0.03) 0%, transparent 50%);
+}
+
+html.light body::before { opacity: 0.15; }
+
+html.light .card {
+  background: #ffffff;
+  border-color: #e4e4e7;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+html.light .card-hover:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1), 0 12px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.8);
+}
+
+/* Text colors di light mode */
+html.light { color: #18181b; }
+html.light .text-white   { color: #18181b !important; }
+html.light .text-white\/80, html.light .text-white\/75 { color: #3f3f46 !important; }
+html.light .text-white\/60, html.light .text-white\/70 { color: #52525b !important; }
+html.light .text-white\/50, html.light .text-white\/45 { color: #71717a !important; }
+html.light .text-white\/40, html.light .text-white\/35 { color: #a1a1aa !important; }
+html.light .text-white\/30, html.light .text-white\/25 { color: #a1a1aa !important; }
+html.light .text-white\/20, html.light .text-white\/15 { color: #d4d4d8 !important; }
+
+/* Surface colors di light mode */
+html.light .bg-surface        { background-color: #f4f4f5 !important; }
+html.light .bg-surface-card   { background-color: #ffffff !important; }
+html.light .bg-white\/5       { background-color: rgba(0,0,0,0.03) !important; }
+html.light .bg-white\/8       { background-color: rgba(0,0,0,0.05) !important; }
+html.light .bg-white\/10      { background-color: rgba(0,0,0,0.06) !important; }
+html.light .border-surface-border { border-color: #e4e4e7 !important; }
+
+/* Input di light mode */
+html.light .input {
+  background: #f9f9fb;
+  border-color: #e4e4e7;
+  color: #18181b;
+}
+html.light .input::placeholder { color: #a1a1aa; }
+html.light .input:focus { border-color: rgba(237,21,21,0.5); }
+
+/* Navbar di light mode */
+html.light header .absolute { background: rgba(244,244,245,0.85) !important; }
+html.light nav .absolute    { background: rgba(244,244,245,0.92) !important; }
+
+/* Progress track light */
+html.light .progress-track { background: rgba(0,0,0,0.08) !important; }
+
+/* Quiz option light */
+html.light .quiz-option { color: #3f3f46 !important; }
+html.light .quiz-option:hover:not(.answered) { background: rgba(0,0,0,0.04) !important; color: #18181b !important; }
+
+/* Vocab card light */
+html.light .vocab-card:hover { background: rgba(0,0,0,0.02) !important; }
+html.light .vocab-card.mastered { background: rgba(74,222,128,0.06) !important; }
+
+/* ═══════════════════════════════════════════════════════════════
+   HANZI FONT SIZE — data-hanzi-size attribute di <html>
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Scale factor untuk hanzi (base = md) */
+:root { --hanzi-scale: 1; }
+[data-hanzi-size="sm"]  { --hanzi-scale: 0.80; }
+[data-hanzi-size="md"]  { --hanzi-scale: 1.00; }
+[data-hanzi-size="lg"]  { --hanzi-scale: 1.25; }
+[data-hanzi-size="xl"]  { --hanzi-scale: 1.55; }
+
+/* Terapkan ke elemen hanzi — hanya di vocab card dan flash card */
+.hanzi-char {
+  font-size: calc(1em * var(--hanzi-scale));
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 700;
 }

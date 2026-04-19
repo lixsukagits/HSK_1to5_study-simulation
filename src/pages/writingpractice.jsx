@@ -25,8 +25,9 @@ function normalizePinyin(str) {
 
 export function WritingPractice() {
   const { settings }     = useSettings()
-  const { logActivity }  = useProgress()
-  const { recordActivity } = useStreak()
+  const { userId } = useAuthContext()
+  const { logActivity }  = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
   const [mode,    setMode]   = useState(null)   // null | 'hanzi2pinyin' | 'pinyin2hanzi' | 'arti2hanzi'

@@ -7,6 +7,7 @@ import { useQuiz } from '../hooks/usequiz'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
+import { useAuthContext } from '../context/authcontext'
 import { storage, STORAGE_KEYS } from '../utils/storage'
 import { AudioButton } from '../components/ui/audiobutton'
 import { XP_REWARDS } from '../utils/achievements'
@@ -28,8 +29,9 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 
 export function Quiz() {
   const { settings }   = useSettings()
-  const { logActivity } = useProgress()
-  const { recordActivity } = useStreak()
+  const { userId } = useAuthContext()
+  const { logActivity } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
   const [selectedType,  setSelectedType]  = useState(settings.quizType || QUIZ_TYPES.HANZI_TO_INDO)

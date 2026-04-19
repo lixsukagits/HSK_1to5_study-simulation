@@ -6,6 +6,7 @@ import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
 import { useBookmark } from '../hooks/usebookmark'
+import { useAuthContext } from '../context/authcontext'
 import { FlashCardDeck } from '../components/vocab/flashcarddeck'
 import { initTTS } from '../utils/tts'
 
@@ -15,9 +16,10 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 
 export function FlashCards() {
   const { settings } = useSettings()
-  const { progress, markSeen, markMastered, logActivity } = useProgress()
-  const { recordActivity } = useStreak()
-  const { bookmarkSet, toggle: toggleBookmark } = useBookmark()
+  const { userId } = useAuthContext()
+  const { progress, markSeen, markMastered, logActivity } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
+  const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
   const [mode,          setMode]          = useState(null)   // null | 'all' | 'unseen' | 'review' | 'bookmarks'
