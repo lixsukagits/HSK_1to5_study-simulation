@@ -1,4 +1,21 @@
 // HSK 3.0 Level 3 — 500 kata (sesuai daftar resmi HSK 3.0)
+// Versi Final — divalidasi dari 3 sumber:
+//   1. GF 0025-2021 (standar resmi Tiongkok)
+//   2. Syllabus hskmokctest.com
+//   3. IndoPanda Elite Akademi PDF (dengan word class 词性)
+// Perbaikan utama:
+//   - id 3-006 把: tambah fungsi penanda disposal (把-struktur)
+//   - id 3-040 不见: hapus "sampai jumpa", ganti "tidak terlihat/tidak bisa ditemukan"
+//   - id 3-044 才: perjelas definisi → "baru saja; baru; tidak sampai"
+//   - id 3-083 得(dé): tulis ulang → partikel potensi (verb+得/不+komplemen)
+//   - id 3-245 老: tambah makna awalan kehormatan
+//   - id 3-285 牛: hapus "hebat (slang)" — tidak ada di syllabus resmi
+//   - id 3-327 声: tambah fungsi kata ukuran
+//   - id 3-332 市: hapus makna "pasar" — tidak standar HSK 3
+//   - id 3-355 挺: hapus makna "tegak" — tidak ada di syllabus
+//   - id 3-482 中: revisi arti agar sesuai HSK 3
+//   - Pinyin id 3-038, 3-055, 3-056: hapus spasi di kata majemuk
+//   - Pinyin id 3-170: hapus tanda hubung di hónglǜdēng
 // Struktur: { id, hanzi, pinyin, arti, contoh, terjemahan, level }
 
 export const hsk3 = [
@@ -8,7 +25,7 @@ export const hsk3 = [
   { id: '3-003', hanzi: '安静', pinyin: 'ānjìng', arti: 'tenang; hening; sunyi', contoh: '图书馆很安静。', terjemahan: 'Perpustakaan sangat tenang.', level: 3 },
   { id: '3-004', hanzi: '安全', pinyin: 'ānquán', arti: 'aman; selamat; keamanan', contoh: '路上注意安全。', terjemahan: 'Jaga keselamatan di jalan.', level: 3 },
   { id: '3-005', hanzi: '阿姨', pinyin: 'āyí', arti: 'tante; bibi; pengasuh', contoh: '阿姨很亲切。', terjemahan: 'Tante sangat ramah.', level: 3 },
-  { id: '3-006', hanzi: '把', pinyin: 'bǎ', arti: '(preposisi/kata ukuran benda bertangkai)', contoh: '请把书给我。', terjemahan: 'Tolong berikan buku itu kepada saya.', level: 3 },
+  { id: '3-006', hanzi: '把', pinyin: 'bǎ', arti: '(preposisi penanda objek disposal; kata ukuran benda bertangkai)', contoh: '请把书给我。', terjemahan: 'Tolong berikan buku itu kepada saya.', level: 3 },
   { id: '3-007', hanzi: '办', pinyin: 'bàn', arti: 'mengurus; menangani; melakukan', contoh: '我去办签证。', terjemahan: 'Saya pergi mengurus visa.', level: 3 },
   { id: '3-008', hanzi: '搬', pinyin: 'bān', arti: 'memindahkan; pindah (tempat tinggal)', contoh: '他搬家了。', terjemahan: 'Dia pindah rumah.', level: 3 },
   { id: '3-009', hanzi: '办法', pinyin: 'bànfǎ', arti: 'cara; metode; solusi', contoh: '有什么好办法？', terjemahan: 'Ada cara yang baik?', level: 3 },
@@ -23,7 +40,7 @@ export const hsk3 = [
   { id: '3-018', hanzi: '北', pinyin: 'běi', arti: 'utara', contoh: '往北走。', terjemahan: 'Jalan ke utara.', level: 3 },
   { id: '3-019', hanzi: '北方', pinyin: 'běifāng', arti: 'utara; bagian utara', contoh: '他来自北方。', terjemahan: 'Dia berasal dari utara.', level: 3 },
   { id: '3-020', hanzi: '变', pinyin: 'biàn', arti: 'berubah; menjadi', contoh: '天气变冷了。', terjemahan: 'Cuaca menjadi dingin.', level: 3 },
-  { id: '3-021', hanzi: '遍', pinyin: 'biàn', arti: '(kata ukuran tindakan, kali)', contoh: '请再说一遍。', terjemahan: 'Tolong katakan sekali lagi.', level: 3 },
+  { id: '3-021', hanzi: '遍', pinyin: 'biàn', arti: '(kata ukuran tindakan dari awal hingga akhir, kali)', contoh: '请再说一遍。', terjemahan: 'Tolong katakan sekali lagi.', level: 3 },
   { id: '3-022', hanzi: '变成', pinyin: 'biànchéng', arti: 'menjadi; berubah menjadi', contoh: '他变成了好学生。', terjemahan: 'Dia menjadi siswa yang baik.', level: 3 },
   { id: '3-023', hanzi: '变化', pinyin: 'biànhuà', arti: 'perubahan; berubah', contoh: '城市变化很大。', terjemahan: 'Kota ini berubah sangat besar.', level: 3 },
   { id: '3-024', hanzi: '表演', pinyin: 'biǎoyǎn', arti: 'pertunjukan; tampil; bermain peran', contoh: '他们的表演很精彩。', terjemahan: 'Pertunjukan mereka sangat mengagumkan.', level: 3 },
@@ -40,15 +57,15 @@ export const hsk3 = [
   { id: '3-035', hanzi: '比如', pinyin: 'bǐrú', arti: 'misalnya; contohnya', contoh: '比如说，苹果。', terjemahan: 'Misalnya, apel.', level: 3 },
   { id: '3-036', hanzi: '比赛', pinyin: 'bǐsài', arti: 'kompetisi; pertandingan', contoh: '今天有足球比赛。', terjemahan: 'Hari ini ada pertandingan sepak bola.', level: 3 },
   { id: '3-037', hanzi: '必须', pinyin: 'bìxū', arti: 'harus; wajib', contoh: '你必须来。', terjemahan: 'Kamu harus datang.', level: 3 },
-  { id: '3-038', hanzi: '不同', pinyin: 'bù tóng', arti: 'berbeda; tidak sama', contoh: '我们的想法不同。', terjemahan: 'Pemikiran kita berbeda.', level: 3 },
+  { id: '3-038', hanzi: '不同', pinyin: 'bùtóng', arti: 'berbeda; tidak sama', contoh: '我们的想法不同。', terjemahan: 'Pemikiran kita berbeda.', level: 3 },
   { id: '3-039', hanzi: '不但', pinyin: 'búdàn', arti: 'tidak hanya; bukan saja', contoh: '他不但聪明，还很勤快。', terjemahan: 'Dia tidak hanya cerdas, tapi juga rajin.', level: 3 },
-  { id: '3-040', hanzi: '不见', pinyin: 'bújiàn', arti: 'tidak terlihat; sampai jumpa', contoh: '不见不散！', terjemahan: 'Tunggu sampai bertemu!', level: 3 },
+  { id: '3-040', hanzi: '不见', pinyin: 'bújiàn', arti: 'tidak terlihat; tidak bisa ditemukan', contoh: '我的钥匙不见了。', terjemahan: 'Kunci saya tidak bisa ditemukan.', level: 3 },
   { id: '3-041', hanzi: '不久', pinyin: 'bùjiǔ', arti: 'tidak lama; segera', contoh: '不久他就来了。', terjemahan: 'Tidak lama kemudian dia datang.', level: 3 },
   { id: '3-042', hanzi: '不行', pinyin: 'bùxíng', arti: 'tidak boleh; tidak bisa', contoh: '这样不行。', terjemahan: 'Begini tidak bisa.', level: 3 },
   { id: '3-043', hanzi: '不用', pinyin: 'búyòng', arti: 'tidak perlu; tidak usah', contoh: '不用谢。', terjemahan: 'Tidak perlu berterima kasih.', level: 3 },
 
   // ── C ──────────────────────────────────────────────────────
-  { id: '3-044', hanzi: '才', pinyin: 'cái', arti: '(menunjukkan keterlambatan/jumlah kecil)', contoh: '他才来。', terjemahan: 'Dia baru saja datang.', level: 3 },
+  { id: '3-044', hanzi: '才', pinyin: 'cái', arti: 'baru; baru saja; tidak sampai (jumlah kecil/terlambat)', contoh: '他才来。', terjemahan: 'Dia baru saja datang.', level: 3 },
   { id: '3-045', hanzi: '菜单', pinyin: 'càidān', arti: 'menu makanan', contoh: '请给我菜单。', terjemahan: 'Tolong berikan saya menu.', level: 3 },
   { id: '3-046', hanzi: '参加', pinyin: 'cānjiā', arti: 'berpartisipasi; mengikuti; menghadiri', contoh: '我参加了比赛。', terjemahan: 'Saya mengikuti kompetisi.', level: 3 },
   { id: '3-047', hanzi: '草', pinyin: 'cǎo', arti: 'rumput; jerami', contoh: '草地很绿。', terjemahan: 'Rumputnya sangat hijau.', level: 3 },
@@ -56,11 +73,11 @@ export const hsk3 = [
   { id: '3-049', hanzi: '层', pinyin: 'céng', arti: 'lapisan; lantai (gedung)', contoh: '他住在十层。', terjemahan: 'Dia tinggal di lantai sepuluh.', level: 3 },
   { id: '3-050', hanzi: '查', pinyin: 'chá', arti: 'memeriksa; mencari (informasi)', contoh: '我查了一下资料。', terjemahan: 'Saya mencari informasinya.', level: 3 },
   { id: '3-051', hanzi: '差', pinyin: 'chà', arti: 'berbeda; kurang; buruk', contoh: '他的成绩很差。', terjemahan: 'Nilainya sangat buruk.', level: 3 },
-  { id: '3-052', hanzi: '差不多', pinyin: 'chàbuduō', arti: 'hampir; kurang lebih; kira-kira', contoh: '差不多三点钟。', terjemahan: 'Kira-kira jam tiga.', level: 3 },
+  { id: '3-052', hanzi: '差不多', pinyin: 'chàbuduō', arti: 'hampir; kurang lebih; hampir sama', contoh: '差不多三点钟。', terjemahan: 'Kira-kira jam tiga.', level: 3 },
   { id: '3-053', hanzi: '尝', pinyin: 'cháng', arti: 'mencicipi; merasakan', contoh: '请尝一下这道菜。', terjemahan: 'Tolong cicipi masakan ini.', level: 3 },
   { id: '3-054', hanzi: '常', pinyin: 'cháng', arti: 'sering; kerap', contoh: '他常来这里。', terjemahan: 'Dia sering datang ke sini.', level: 3 },
-  { id: '3-055', hanzi: '常见', pinyin: 'cháng jiàn', arti: 'umum; lazim; biasa', contoh: '这是很常见的问题。', terjemahan: 'Ini adalah masalah yang sangat umum.', level: 3 },
-  { id: '3-056', hanzi: '常用', pinyin: 'cháng yòng', arti: 'sering digunakan; umum dipakai', contoh: '这是常用词。', terjemahan: 'Ini adalah kata yang sering digunakan.', level: 3 },
+  { id: '3-055', hanzi: '常见', pinyin: 'chángjiàn', arti: 'umum; lazim; biasa', contoh: '这是很常见的问题。', terjemahan: 'Ini adalah masalah yang sangat umum.', level: 3 },
+  { id: '3-056', hanzi: '常用', pinyin: 'chángyòng', arti: 'sering digunakan; umum dipakai', contoh: '这是常用词。', terjemahan: 'Ini adalah kata yang sering digunakan.', level: 3 },
   { id: '3-057', hanzi: '常常', pinyin: 'chángcháng', arti: 'sering; kerap kali', contoh: '他常常迟到。', terjemahan: 'Dia sering terlambat.', level: 3 },
   { id: '3-058', hanzi: '成绩', pinyin: 'chéngjì', arti: 'nilai; hasil; prestasi', contoh: '他的成绩很好。', terjemahan: 'Nilainya sangat bagus.', level: 3 },
   { id: '3-059', hanzi: '城市', pinyin: 'chéngshì', arti: 'kota', contoh: '北京是大城市。', terjemahan: 'Beijing adalah kota besar.', level: 3 },
@@ -89,7 +106,7 @@ export const hsk3 = [
   { id: '3-080', hanzi: '大小', pinyin: 'dàxiǎo', arti: 'ukuran; besar kecilnya', contoh: '这件衣服大小合适。', terjemahan: 'Ukuran baju ini pas.', level: 3 },
   { id: '3-081', hanzi: '大熊猫', pinyin: 'dàxióngmāo', arti: 'panda raksasa', contoh: '大熊猫是中国国宝。', terjemahan: 'Panda raksasa adalah harta nasional Tiongkok.', level: 3 },
   { id: '3-082', hanzi: '大衣', pinyin: 'dàyī', arti: 'mantel; overcoat', contoh: '天冷了，穿大衣吧。', terjemahan: 'Sudah dingin, pakailah mantel.', level: 3 },
-  { id: '3-083', hanzi: '得', pinyin: 'dé', arti: '(partikel kemungkinan)', contoh: '这里停不得。', terjemahan: 'Di sini tidak boleh parkir.', level: 3 },
+  { id: '3-083', hanzi: '得', pinyin: 'dé', arti: '(partikel potensi antara verba dan komplemen: V+得/不+komplemen)', contoh: '这里停不得。', terjemahan: 'Di sini tidak boleh berhenti.', level: 3 },
   { id: '3-084', hanzi: '得到', pinyin: 'dédào', arti: 'mendapat; memperoleh', contoh: '他得到了奖学金。', terjemahan: 'Dia mendapat beasiswa.', level: 3 },
   { id: '3-085', hanzi: '得分', pinyin: 'défēn', arti: 'mendapat nilai; mencetak poin', contoh: '他得了高分。', terjemahan: 'Dia mendapat nilai tinggi.', level: 3 },
   { id: '3-086', hanzi: '的话', pinyin: 'dehuà', arti: 'kalau; jika (kondisional)', contoh: '你来的话，告诉我。', terjemahan: 'Kalau kamu datang, beritahu saya.', level: 3 },
@@ -134,7 +151,7 @@ export const hsk3 = [
   { id: '3-123', hanzi: '房子', pinyin: 'fángzi', arti: 'rumah; bangunan', contoh: '他有一栋大房子。', terjemahan: 'Dia punya sebuah rumah besar.', level: 3 },
   { id: '3-124', hanzi: '发烧', pinyin: 'fāshāo', arti: 'demam', contoh: '他发烧了。', terjemahan: 'Dia demam.', level: 3 },
   { id: '3-125', hanzi: '发生', pinyin: 'fāshēng', arti: 'terjadi; berlangsung', contoh: '发生了什么事？', terjemahan: 'Apa yang terjadi?', level: 3 },
-  { id: '3-126', hanzi: '发现', pinyin: 'fāxiàn', arti: 'menemukan; menyadari; menemukan', contoh: '他发现了新问题。', terjemahan: 'Dia menemukan masalah baru.', level: 3 },
+  { id: '3-126', hanzi: '发现', pinyin: 'fāxiàn', arti: 'menemukan; menyadari', contoh: '他发现了新问题。', terjemahan: 'Dia menemukan masalah baru.', level: 3 },
   { id: '3-127', hanzi: '发展', pinyin: 'fāzhǎn', arti: 'berkembang; perkembangan', contoh: '城市发展很快。', terjemahan: 'Kota berkembang sangat cepat.', level: 3 },
   { id: '3-128', hanzi: '风', pinyin: 'fēng', arti: 'angin', contoh: '今天风很大。', terjemahan: 'Hari ini anginnya sangat kencang.', level: 3 },
   { id: '3-129', hanzi: '封', pinyin: 'fēng', arti: '(kata ukuran untuk surat); menyegel', contoh: '我写了一封信。', terjemahan: 'Saya menulis sebuah surat.', level: 3 },
@@ -180,7 +197,7 @@ export const hsk3 = [
   { id: '3-167', hanzi: '河', pinyin: 'hé', arti: 'sungai', contoh: '这条河很长。', terjemahan: 'Sungai ini sangat panjang.', level: 3 },
   { id: '3-168', hanzi: '黑板', pinyin: 'hēibǎn', arti: 'papan tulis', contoh: '老师在黑板上写字。', terjemahan: 'Guru menulis di papan tulis.', level: 3 },
   { id: '3-169', hanzi: '合适', pinyin: 'héshì', arti: 'cocok; sesuai; pas', contoh: '这双鞋很合适。', terjemahan: 'Sepatu ini sangat pas.', level: 3 },
-  { id: '3-170', hanzi: '红绿灯', pinyin: 'hóng-lǜdēng', arti: 'lampu lalu lintas', contoh: '过红绿灯要小心。', terjemahan: 'Hati-hati saat melewati lampu lalu lintas.', level: 3 },
+  { id: '3-170', hanzi: '红绿灯', pinyin: 'hónglǜdēng', arti: 'lampu lalu lintas', contoh: '过红绿灯要小心。', terjemahan: 'Hati-hati saat melewati lampu lalu lintas.', level: 3 },
   { id: '3-171', hanzi: '后来', pinyin: 'hòulái', arti: 'setelah itu; kemudian', contoh: '后来他去了上海。', terjemahan: 'Setelah itu dia pergi ke Shanghai.', level: 3 },
   { id: '3-172', hanzi: '后年', pinyin: 'hòunián', arti: 'dua tahun lagi', contoh: '后年我毕业。', terjemahan: 'Dua tahun lagi saya lulus.', level: 3 },
   { id: '3-173', hanzi: '后天', pinyin: 'hòutiān', arti: 'lusa', contoh: '后天见！', terjemahan: 'Sampai jumpa lusa!', level: 3 },
@@ -202,7 +219,7 @@ export const hsk3 = [
   { id: '3-187', hanzi: '极', pinyin: 'jí', arti: 'sangat; amat; ekstrem', contoh: '他极聪明。', terjemahan: 'Dia sangat cerdas.', level: 3 },
   { id: '3-188', hanzi: '急', pinyin: 'jí', arti: 'mendesak; terburu-buru; cemas', contoh: '别急，慢慢来。', terjemahan: 'Jangan terburu-buru, pelan-pelan.', level: 3 },
   { id: '3-189', hanzi: '记', pinyin: 'jì', arti: 'mengingat; mencatat', contoh: '我记下来了。', terjemahan: 'Saya sudah mencatatnya.', level: 3 },
-  { id: '3-190', hanzi: '季', pinyin: 'jì', arti: 'musim', contoh: '一年有四季。', terjemahan: 'Satu tahun ada empat musim.', level: 3 },
+  { id: '3-190', hanzi: '季', pinyin: 'jì', arti: 'musim (akhiran)', contoh: '一年有四季。', terjemahan: 'Satu tahun ada empat musim.', level: 3 },
   { id: '3-191', hanzi: '鸡', pinyin: 'jī', arti: 'ayam', contoh: '我喜欢吃鸡肉。', terjemahan: 'Saya suka makan ayam.', level: 3 },
   { id: '3-192', hanzi: '加', pinyin: 'jiā', arti: 'menambah; plus', contoh: '请加我的微信。', terjemahan: 'Tolong tambahkan WeChat saya.', level: 3 },
   { id: '3-193', hanzi: '检查', pinyin: 'jiǎnchá', arti: 'memeriksa; mengecek', contoh: '医生检查了我的身体。', terjemahan: 'Dokter memeriksa tubuh saya.', level: 3 },
@@ -215,7 +232,7 @@ export const hsk3 = [
   { id: '3-200', hanzi: '角', pinyin: 'jiǎo', arti: 'sudut; jiao (0,1 yuan)', contoh: '一角钱。', terjemahan: 'Satu jiao.', level: 3 },
   { id: '3-201', hanzi: '脚', pinyin: 'jiǎo', arti: 'kaki', contoh: '我的脚很痛。', terjemahan: 'Kaki saya sangat sakit.', level: 3 },
   { id: '3-202', hanzi: '假期', pinyin: 'jiàqī', arti: 'liburan; masa libur', contoh: '暑假我要去旅游。', terjemahan: 'Saat liburan musim panas saya mau berwisata.', level: 3 },
-  { id: '3-203', hanzi: '节', pinyin: 'jié', arti: 'festival; bagian; (kata ukuran pelajaran)', contoh: '今天上三节课。', terjemahan: 'Hari ini ada tiga jam pelajaran.', level: 3 },
+  { id: '3-203', hanzi: '节', pinyin: 'jié', arti: 'festival; bagian; (kata ukuran pelajaran/ruas)', contoh: '今天上三节课。', terjemahan: 'Hari ini ada tiga jam pelajaran.', level: 3 },
   { id: '3-204', hanzi: '借', pinyin: 'jiè', arti: 'meminjam; meminjamkan', contoh: '我想借一本书。', terjemahan: 'Saya ingin meminjam sebuah buku.', level: 3 },
   { id: '3-205', hanzi: '接', pinyin: 'jiē', arti: 'menerima; menjemput', contoh: '我去机场接他。', terjemahan: 'Saya pergi ke bandara menjemputnya.', level: 3 },
   { id: '3-206', hanzi: '街', pinyin: 'jiē', arti: 'jalan raya; jalan', contoh: '我在街上走。', terjemahan: 'Saya berjalan di jalan.', level: 3 },
@@ -261,7 +278,7 @@ export const hsk3 = [
   // ── L ──────────────────────────────────────────────────────
   { id: '3-243', hanzi: '来自', pinyin: 'láizì', arti: 'berasal dari; datang dari', contoh: '他来自印度尼西亚。', terjemahan: 'Dia berasal dari Indonesia.', level: 3 },
   { id: '3-244', hanzi: '蓝', pinyin: 'lán', arti: 'biru', contoh: '天空是蓝色的。', terjemahan: 'Langit berwarna biru.', level: 3 },
-  { id: '3-245', hanzi: '老', pinyin: 'lǎo', arti: 'tua; selalu; senior', contoh: '他年纪很老了。', terjemahan: 'Usianya sudah sangat tua.', level: 3 },
+  { id: '3-245', hanzi: '老', pinyin: 'lǎo', arti: 'tua; selalu; senior; (awalan kehormatan: 老+nama)', contoh: '他年纪很老了。', terjemahan: 'Usianya sudah sangat tua.', level: 3 },
   { id: '3-246', hanzi: '老人', pinyin: 'lǎorén', arti: 'orang tua; lansia', contoh: '要尊重老人。', terjemahan: 'Harus menghormati orang tua/lansia.', level: 3 },
   { id: '3-247', hanzi: '练', pinyin: 'liàn', arti: 'berlatih; melatih', contoh: '每天练习汉语。', terjemahan: 'Berlatih bahasa Mandarin setiap hari.', level: 3 },
   { id: '3-248', hanzi: '脸', pinyin: 'liǎn', arti: 'wajah; muka', contoh: '洗脸再出门。', terjemahan: 'Cuci muka sebelum keluar.', level: 3 },
@@ -303,7 +320,7 @@ export const hsk3 = [
   { id: '3-282', hanzi: '难听', pinyin: 'nántīng', arti: 'tidak enak didengar', contoh: '这首歌很难听。', terjemahan: 'Lagu ini tidak enak didengar.', level: 3 },
   { id: '3-283', hanzi: '年级', pinyin: 'niánjí', arti: 'kelas/tingkat (sekolah)', contoh: '他在几年级？', terjemahan: 'Dia ada di kelas berapa?', level: 3 },
   { id: '3-284', hanzi: '年轻', pinyin: 'niánqīng', arti: 'muda', contoh: '她很年轻。', terjemahan: 'Dia sangat muda.', level: 3 },
-  { id: '3-285', hanzi: '牛', pinyin: 'niú', arti: 'sapi; kerbau; hebat (slang)', contoh: '他真牛！', terjemahan: 'Dia benar-benar hebat!', level: 3 },
+  { id: '3-285', hanzi: '牛', pinyin: 'niú', arti: 'sapi; kerbau', contoh: '草地上有一头牛。', terjemahan: 'Di padang rumput ada seekor sapi.', level: 3 },
   { id: '3-286', hanzi: '努力', pinyin: 'nǔlì', arti: 'berusaha keras; giat', contoh: '我努力学习。', terjemahan: 'Saya giat belajar.', level: 3 },
   { id: '3-287', hanzi: '女人', pinyin: 'nǚrén', arti: 'wanita; perempuan dewasa', contoh: '那个女人是我姑姑。', terjemahan: 'Wanita itu adalah bibi saya.', level: 3 },
   { id: '3-288', hanzi: '女生', pinyin: 'nǚshēng', arti: 'siswa perempuan', contoh: '班里女生多。', terjemahan: 'Di kelas banyak siswa perempuan.', level: 3 },
@@ -349,12 +366,12 @@ export const hsk3 = [
   { id: '3-324', hanzi: '上衣', pinyin: 'shàngyī', arti: 'jaket; atasan; baju atas', contoh: '他穿了一件上衣。', terjemahan: 'Dia memakai sebuah jaket.', level: 3 },
   { id: '3-325', hanzi: '勺子', pinyin: 'sháozi', arti: 'sendok', contoh: '用勺子吃饭。', terjemahan: 'Makan menggunakan sendok.', level: 3 },
   { id: '3-326', hanzi: '身边', pinyin: 'shēnbiān', arti: 'di sisi; di dekat seseorang', contoh: '他在我身边。', terjemahan: 'Dia ada di sisi saya.', level: 3 },
-  { id: '3-327', hanzi: '声', pinyin: 'shēng', arti: 'suara; bunyi', contoh: '我听到一声响。', terjemahan: 'Saya mendengar sebuah suara.', level: 3 },
+  { id: '3-327', hanzi: '声', pinyin: 'shēng', arti: 'suara; bunyi; (kata ukuran suara: 一声)', contoh: '我听到一声响。', terjemahan: 'Saya mendengar sebuah suara.', level: 3 },
   { id: '3-328', hanzi: '身高', pinyin: 'shēngāo', arti: 'tinggi badan', contoh: '你的身高是多少？', terjemahan: 'Berapa tinggi badanmu?', level: 3 },
   { id: '3-329', hanzi: '生活', pinyin: 'shēnghuó', arti: 'kehidupan; hidup; menjalani hidup', contoh: '他的生活很幸福。', terjemahan: 'Kehidupannya sangat bahagia.', level: 3 },
   { id: '3-330', hanzi: '生气', pinyin: 'shēngqì', arti: 'marah; gusar', contoh: '他生气了，不说话。', terjemahan: 'Dia marah, tidak mau bicara.', level: 3 },
   { id: '3-331', hanzi: '声音', pinyin: 'shēngyīn', arti: 'suara; bunyi', contoh: '他的声音很好听。', terjemahan: 'Suaranya sangat merdu.', level: 3 },
-  { id: '3-332', hanzi: '市', pinyin: 'shì', arti: 'kota; pasar', contoh: '这个市很大。', terjemahan: 'Kota ini sangat besar.', level: 3 },
+  { id: '3-332', hanzi: '市', pinyin: 'shì', arti: 'kota; kotamadya', contoh: '这个市很大。', terjemahan: 'Kota ini sangat besar.', level: 3 },
   { id: '3-333', hanzi: '试', pinyin: 'shì', arti: 'mencoba; menguji', contoh: '你试一下吧。', terjemahan: 'Coba kamu coba.', level: 3 },
   { id: '3-334', hanzi: '室', pinyin: 'shì', arti: 'ruangan; kamar', contoh: '这是会议室。', terjemahan: 'Ini adalah ruang rapat.', level: 3 },
   { id: '3-335', hanzi: '世界', pinyin: 'shìjiè', arti: 'dunia', contoh: '世界很大。', terjemahan: 'Dunia sangat besar.', level: 3 },
@@ -379,7 +396,7 @@ export const hsk3 = [
   { id: '3-352', hanzi: '甜', pinyin: 'tián', arti: 'manis', contoh: '这个蛋糕很甜。', terjemahan: 'Kue ini sangat manis.', level: 3 },
   { id: '3-353', hanzi: '跳', pinyin: 'tiào', arti: 'melompat; menari', contoh: '他跳得很高。', terjemahan: 'Dia melompat sangat tinggi.', level: 3 },
   { id: '3-354', hanzi: '提高', pinyin: 'tígāo', arti: 'meningkatkan; memperbaiki', contoh: '我想提高汉语水平。', terjemahan: 'Saya ingin meningkatkan kemampuan bahasa Mandarin.', level: 3 },
-  { id: '3-355', hanzi: '挺', pinyin: 'tǐng', arti: 'cukup; lumayan; tegak', contoh: '他挺高的。', terjemahan: 'Dia cukup tinggi.', level: 3 },
+  { id: '3-355', hanzi: '挺', pinyin: 'tǐng', arti: 'cukup; lumayan; agak', contoh: '他挺高的。', terjemahan: 'Dia cukup tinggi.', level: 3 },
   { id: '3-356', hanzi: '听说', pinyin: 'tīngshuō', arti: 'kabarnya; dengar-dengar', contoh: '听说他去中国了。', terjemahan: 'Kabarnya dia pergi ke Tiongkok.', level: 3 },
   { id: '3-357', hanzi: '体育', pinyin: 'tǐyù', arti: 'pendidikan jasmani; olahraga', contoh: '我喜欢上体育课。', terjemahan: 'Saya suka pelajaran olahraga.', level: 3 },
   { id: '3-358', hanzi: '体育馆', pinyin: 'tǐyùguǎn', arti: 'gedung olahraga; gymnasium', contoh: '我在体育馆打球。', terjemahan: 'Saya bermain bola di gedung olahraga.', level: 3 },
@@ -506,13 +523,13 @@ export const hsk3 = [
   { id: '3-473', hanzi: '照相', pinyin: 'zhàoxiàng', arti: 'mengambil foto; memotret', contoh: '我们照相吧。', terjemahan: 'Mari kita foto.', level: 3 },
   { id: '3-474', hanzi: '只', pinyin: 'zhǐ', arti: 'hanya; saja; cuma', contoh: '我只喝水。', terjemahan: 'Saya hanya minum air.', level: 3 },
   { id: '3-475', hanzi: '纸', pinyin: 'zhǐ', arti: 'kertas', contoh: '给我一张纸。', terjemahan: 'Berikan saya selembar kertas.', level: 3 },
-  { id: '3-476', hanzi: '只能', pinyin: 'zhǐ néng', arti: 'hanya bisa; hanya boleh', contoh: '这里只能停车。', terjemahan: 'Di sini hanya boleh parkir.', level: 3 },
+  { id: '3-476', hanzi: '只能', pinyin: 'zhǐnéng', arti: 'hanya bisa; hanya boleh', contoh: '这里只能停车。', terjemahan: 'Di sini hanya boleh parkir.', level: 3 },
   { id: '3-477', hanzi: '直到', pinyin: 'zhídào', arti: 'sampai; hingga', contoh: '他工作直到深夜。', terjemahan: 'Dia bekerja sampai larut malam.', level: 3 },
   { id: '3-478', hanzi: '只是', pinyin: 'zhǐshì', arti: 'hanya; semata-mata; cuma', contoh: '只是问一下。', terjemahan: 'Hanya bertanya saja.', level: 3 },
   { id: '3-479', hanzi: '只要', pinyin: 'zhǐyào', arti: 'asalkan; asal; selama', contoh: '只要努力，就能成功。', terjemahan: 'Asalkan berusaha keras, pasti bisa berhasil.', level: 3 },
   { id: '3-480', hanzi: '只有', pinyin: 'zhǐyǒu', arti: 'hanya jika; hanya dengan', contoh: '只有努力才能成功。', terjemahan: 'Hanya dengan berusaha keras baru bisa berhasil.', level: 3 },
   { id: '3-481', hanzi: '种', pinyin: 'zhǒng', arti: 'jenis; macam; tipe', contoh: '有很多种颜色。', terjemahan: 'Ada banyak jenis warna.', level: 3 },
-  { id: '3-482', hanzi: '中', pinyin: 'zhōng', arti: '(pelengkap kata kerja: tepat sasaran)', contoh: '他射中了目标。', terjemahan: 'Dia tepat sasaran.', level: 3 },
+  { id: '3-482', hanzi: '中', pinyin: 'zhōng', arti: 'tengah; di dalam; proses (dalam keadaan ~)', contoh: '他在考试中。', terjemahan: 'Dia sedang dalam ujian.', level: 3 },
   { id: '3-483', hanzi: '中间', pinyin: 'zhōngjiān', arti: 'tengah; antara; di antara', contoh: '他坐在中间。', terjemahan: 'Dia duduk di tengah.', level: 3 },
   { id: '3-484', hanzi: '重要', pinyin: 'zhòngyào', arti: 'penting', contoh: '这件事很重要。', terjemahan: 'Hal ini sangat penting.', level: 3 },
   { id: '3-485', hanzi: '终于', pinyin: 'zhōngyú', arti: 'akhirnya; pada akhirnya', contoh: '终于到了！', terjemahan: 'Akhirnya tiba!', level: 3 },
