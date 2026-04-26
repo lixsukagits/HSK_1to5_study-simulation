@@ -7,42 +7,50 @@
 // ============================================================
 
 import { hsk1 } from './hsk1.js'
-import { hsk1Supplement } from './hsk1_supplement.js'
-import { hsk1Grammar } from './hsk1_grammar.js'
+import { hsk1Supplement } from './hsk1supplement.js'
+import { hsk1Grammar } from './hsk1grammar.js'
 
 import { hsk2 } from './hsk2.js'
-import { hsk2Supplement } from './hsk2_supplement.js'  // tersedia setelah HSK 2 di-acc
-import { hsk2Grammar } from './hsk2_grammar.js'
+import { hsk2Supplement } from './hsk2supplement.js'
+import { hsk2Grammar } from './hsk2grammar.js'
 
 import { hsk3 } from './hsk3.js'
-import { hsk3Supplement } from './hsk3_supplement.js'
-import { hsk3Grammar } from './hsk3_grammar.js'
+import { hsk3Supplement } from './hsk3supplement.js'
+import { hsk3Grammar } from './hsk3grammar.js'
 
 import { hsk4 } from './hsk4.js'
-// import { hsk4Supplement } from './hsk4_supplement.js'
-import { hsk4Grammar } from './hsk4_grammar.js'
+import { hsk4Supplement } from './hsk4supplement.js'
+import { hsk4Grammar } from './hsk4grammar.js'
 
-import { hsk5 } from './hsk5.js'
-// import { hsk5Supplement } from './hsk5_supplement.js'
-// import { hsk5Grammar } from './hsk5_grammar.js'
+import { hsk5a } from './hsk5a.js'
+import { hsk5b } from './hsk5b.js'
+import { hsk5Supplement } from './hsk5_supplement.js'
+import { hsk5Grammar } from './hsk5grammar.js'
 
 // ── Vocab: Gabungan Test Standard + Supplement GF 0025 ───────
 
-/** HSK 1: 300 kata resmi + 87 kata tambahan GF 0025 */
+/** HSK 1: 300 kata resmi + 145 kata tambahan GF 0025 */
 export const hsk1Complete = [...hsk1, ...hsk1Supplement]
 
-/** HSK 2-5: akan di-update setelah masing-masing di-acc */
+/** HSK 2: kata resmi + supplement GF 0025 */
 export const hsk2Complete = [...hsk2, ...hsk2Supplement]
+
+/** HSK 3: kata resmi + supplement GF 0025 */
 export const hsk3Complete = [...hsk3, ...hsk3Supplement]
-export const hsk4Complete = [...hsk4] // belum ada supplement
-export const hsk5Complete = [...hsk5] // belum ada supplement
+
+/** HSK 4: kata resmi + supplement GF 0025 */
+export const hsk4Complete = [...hsk4, ...hsk4Supplement]
+
+/** HSK 5: kata resmi (1592 kata) + supplement GF 0025 (64 kata) */
+export const hsk5 = [...hsk5a, ...hsk5b]
+export const hsk5Complete = [...hsk5a, ...hsk5b, ...hsk5Supplement]
 
 // ── Grammar Exports ──────────────────────────────────────────
 export { hsk1Grammar }
 export { hsk2Grammar }
 export { hsk3Grammar }
 export { hsk4Grammar }
-// export { hsk2Grammar, hsk3Grammar, hsk4Grammar, hsk5Grammar }  // uncomment setelah tersedia
+export { hsk5Grammar }
 
 /** Semua grammar dalam satu object */
 export const allGrammar = {
@@ -50,11 +58,12 @@ export const allGrammar = {
   2: hsk2Grammar,
   3: hsk3Grammar,
   4: hsk4Grammar,
+  5: hsk5Grammar,
 }
 
 // ── Raw Exports (Test Standard saja, tanpa supplement) ───────
 export { hsk1, hsk2, hsk3, hsk4, hsk5 }
-export { hsk1Supplement, hsk2Supplement, hsk3Supplement}
+export { hsk1Supplement, hsk2Supplement, hsk3Supplement, hsk4Supplement, hsk5Supplement }
 
 /** Semua kata HSK 1-5 (Test Standard) */
 export const allWords = [...hsk1, ...hsk2, ...hsk3, ...hsk4, ...hsk5]
@@ -320,6 +329,10 @@ export const dataStats = {
   },
   grammarPoints: {
     1: hsk1Grammar.length,
+    2: hsk2Grammar.length,
+    3: hsk3Grammar.length,
+    4: hsk4Grammar.length,
+    5: hsk5Grammar.length,
   },
   description: 'HSK 3.0 Kosakata Lengkap Level 1-5 dengan Terjemahan Bahasa Indonesia',
   sources: [
@@ -356,11 +369,11 @@ export function getSimpleWords(maxArtiLength = 20, levels = null) {
 export default {
   // Data
   hsk1, hsk2, hsk3, hsk4, hsk5,
-  hsk1Supplement,
+  hsk1Supplement, hsk2Supplement, hsk3Supplement, hsk4Supplement, hsk5Supplement,
   hsk1Complete, hsk2Complete, hsk3Complete, hsk4Complete, hsk5Complete,
   allWords, allWordsComplete, hskData, hskDataComplete, dataStats,
   // Grammar
-  allGrammar, hsk1Grammar,
+  allGrammar, hsk1Grammar, hsk2Grammar, hsk3Grammar, hsk4Grammar, hsk5Grammar,
   // Fungsi
   getLevel, getUpToLevel, searchWords, getWordById,
   getRandomWords, getWordsByInitial, getWordsByLength,

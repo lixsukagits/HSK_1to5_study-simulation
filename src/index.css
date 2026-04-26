@@ -60,7 +60,7 @@
     @apply card transition-all duration-300 cursor-pointer;
   }
   .card-hover:hover {
-    @apply border-surface-border-light -translate-y-1;
+    @apply border-surface-border-light -translate-y-1; /* Sekarang ini akan berfungsi */
     box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
   }
 
@@ -79,10 +79,10 @@
 
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2 font-medium text-sm
-           text-white/60 hover:text-white rounded-xl px-5 py-2.5
-           border border-surface-border hover:border-surface-border-light
-           hover:bg-white/5 transition-all duration-200 active:scale-[0.97]
-           disabled:opacity-30 disabled:cursor-not-allowed;
+          text-white/60 hover:text-white rounded-xl px-5 py-2.5
+          border border-surface-border hover:border-surface-border-light
+          hover:bg-white/5 transition-all duration-200 active:scale-[0.97]
+          disabled:opacity-30 disabled:cursor-not-allowed;
   }
 
   .btn-danger {

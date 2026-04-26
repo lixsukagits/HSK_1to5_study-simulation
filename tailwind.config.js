@@ -47,6 +47,7 @@ export default {
           DEFAULT: '#0f0f0f',
           card:    '#1a1a1a',
           border:  '#2a2a2a',
+          'border-light': '#3f3f3f',
         }
       },
       animation: {
