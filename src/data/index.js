@@ -24,7 +24,7 @@ import { hsk4Grammar } from './hsk4grammar.js'
 
 import { hsk5a } from './hsk5a.js'
 import { hsk5b } from './hsk5b.js'
-import { hsk5Supplement } from './hsk5_supplement.js'
+import { hsk5Supplement } from './hsk5supplement.js'
 import { hsk5Grammar } from './hsk5grammar.js'
 
 // ── Vocab: Gabungan Test Standard + Supplement GF 0025 ───────
@@ -62,7 +62,7 @@ export const allGrammar = {
 }
 
 // ── Raw Exports (Test Standard saja, tanpa supplement) ───────
-export { hsk1, hsk2, hsk3, hsk4, hsk5 }
+export { hsk1, hsk2, hsk3, hsk4 }
 export { hsk1Supplement, hsk2Supplement, hsk3Supplement, hsk4Supplement, hsk5Supplement }
 
 /** Semua kata HSK 1-5 (Test Standard) */

@@ -7,9 +7,13 @@ const NAV_ITEMS = [
   { to: '/',           label: 'Beranda',    Icon: HomeIcon     },
   { to: '/flashcards', label: 'Flash Card', Icon: CardIcon     },
   { to: '/quiz',       label: 'Kuis',       Icon: QuizIcon     },
+  { to: '/grammar/1',  label: 'Grammar',    Icon: GrammarIcon  },
   { to: '/progress',   label: 'Progress',   Icon: ProgressIcon },
 ]
 
+function GrammarIcon({ active }) {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><path d="M9 7h6M9 11h4"/></svg>
+}
 function HomeIcon({ active }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
 }
@@ -52,7 +56,7 @@ export default function Navbar() {
           {/* Nav */}
           <nav className="flex items-center gap-1">
             {NAV_ITEMS.map(({ to, label, Icon }) => (
-              <NavLink key={to} to={to} end={to === '/'}
+              <NavLink key={to} to={to} end={to === '/' || to === '/grammar/1'}
                 className={({ isActive }) =>
                   `relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive ? 'text-white bg-white/8' : 'text-white/45 hover:text-white/80 hover:bg-white/5'
@@ -123,7 +127,7 @@ export default function Navbar() {
         <div className="absolute inset-0 bg-surface/90 backdrop-blur-2xl border-t border-surface-border" />
         <div className="relative flex items-center justify-around h-[62px] px-2">
           {NAV_ITEMS.map(({ to, label, Icon }) => (
-            <NavLink key={to} to={to} end={to === '/'}
+            <NavLink key={to} to={to} end={to === '/' || to === '/grammar/1'}
               className={({ isActive }) =>
                 `relative flex flex-col items-center gap-1 px-4 py-1.5 rounded-2xl transition-all duration-200 ${
                   isActive ? 'text-white' : 'text-white/35 hover:text-white/60'

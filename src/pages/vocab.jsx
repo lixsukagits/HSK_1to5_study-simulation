@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
-import { hskData } from '../data'
+import { hskDataComplete } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useBookmark } from '../hooks/usebookmark'
@@ -18,7 +18,7 @@ const PAGE_SIZE = 30
 export function Vocab() {
   const { level } = useParams()
   const lvl   = HSK_LEVELS.find(l => l.level === Number(level)) || HSK_LEVELS[0]
-  const vocab = hskData[lvl.level] || []
+  const vocab = hskDataComplete[lvl.level] || []
 
   const { userId } = useAuthContext()
   const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress(userId)

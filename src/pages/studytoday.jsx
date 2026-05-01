@@ -20,6 +20,26 @@ initTTS()
 const REVIEW_RATIO   = 0.35
 const QUIZ_PER_BATCH = 5
 
+// ─── Tentukan level yang sudah unlock ────────────────────────
+// Level berikutnya baru unlock kalau level sekarang sudah 80% mastered
+function getUnlockedLevels(progress) {
+  const UNLOCK_THRESHOLD = 0.8
+
+  let unlockedUpTo = 0
+
+  for (let i = 0; i < HSK_LEVELS.length; i++) {
+    const lvl    = HSK_LEVELS[i]
+    const vocab  = hskData[lvl.level] || []
+    const lvlPrg = progress[lvl.level] || { seen: [], mastered: [] }
+    const masteredRatio = vocab.length === 0 ? 1 : lvlPrg.mastered.length / vocab.length
+
+    unlockedUpTo = i
+    if (masteredRatio < UNLOCK_THRESHOLD) break
+  }
+
+  return HSK_LEVELS.slice(0, unlockedUpTo + 1)
+}
+
 // ─── Build session pakai SRS ──────────────────────────────────
 function buildDailySession(progress, settings) {
   const target   = settings.dailyTarget || 20
@@ -30,7 +50,9 @@ function buildDailySession(progress, settings) {
   const newWords = []
   const revWords = []
 
-  for (const lvl of HSK_LEVELS) {
+  const unlockedLevels = getUnlockedLevels(progress)
+
+  for (const lvl of unlockedLevels) {
     const vocab   = hskData[lvl.level] || []
     const lvlPrg  = progress[lvl.level] || { seen: [], mastered: [] }
     const seenSet = new Set(lvlPrg.seen)
@@ -245,9 +267,11 @@ export function StudyToday() {
   const { streak, recordActivity } = useStreak(userId)
   const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
-  const todayLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})[toDateKey()] || { studied: 0 }
-  const target    = settings.dailyTarget || 20
-  const doneToday = todayLog.studied >= target
+  const todayLog       = storage.get(STORAGE_KEYS.DAILY_LOG, {})[toDateKey()] || { studied: 0 }
+  const target         = settings.dailyTarget || 20
+  const doneToday      = todayLog.studied >= target
+  const unlockedLevels = useMemo(() => getUnlockedLevels(progress), [progress])
+  const currentLevel   = unlockedLevels[unlockedLevels.length - 1]
 
   const [session,    setSession]    = useState(() => buildDailySession(progress, settings))
   const [stepIdx,    setStepIdx]    = useState(0)
@@ -318,6 +342,21 @@ export function StudyToday() {
             Sesi Belajar<br /><span className="text-gradient-red">Hari Ini</span>
           </h1>
           <p className="text-white/40 text-sm">Dikurasi otomatis · SRS · kata baru + review</p>
+          {currentLevel && (
+            <div className="mt-3 inline-flex items-center gap-2">
+              <span className={`badge badge-level-${currentLevel.level}`}>{currentLevel.name}</span>
+              <span className="text-white/30 text-xs">level aktif</span>
+              {unlockedLevels.length < HSK_LEVELS.length && (() => {
+                const nextLvl  = HSK_LEVELS[unlockedLevels.length]
+                const vocab    = hskData[currentLevel.level] || []
+                const lvlPrg   = progress[currentLevel.level] || { mastered: [] }
+                const pct      = vocab.length === 0 ? 100 : Math.round((lvlPrg.mastered.length / vocab.length) * 100)
+                return (
+                  <span className="text-white/25 text-xs">· {pct}% → unlock {nextLvl?.name}</span>
+                )
+              })()}
+            </div>
+          )}
         </div>
 
         {doneToday && (
