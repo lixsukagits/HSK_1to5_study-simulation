@@ -1,10 +1,10 @@
-import { useState, useCallback } from 'react'
-import { storage, STORAGE_KEYS, upsertData } from '../utils/storage'
+import { useState, useCallback, useEffect } from 'react'
+import { storage, STORAGE_KEYS, upsertData, loadProgress, loadDailyLog } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { sm2, GRADE as SRS_GRADE } from '../utils/srs'
 import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
 
-// ─── Internal helpers ─────────────────────────────────────────
+// ─── Internal helpers ──────────────────────────────────────────
 function _addXP(amount, userId) {
   const xp   = storage.get(STORAGE_KEYS.XP, { total: 0 })
   const next = { ...xp, total: (xp.total || 0) + amount }
@@ -36,7 +36,6 @@ function _checkAndUnlock(state, userId) {
   storage.set(STORAGE_KEYS.ACHIEVEMENTS, next)
   if (totalXp > 0) _addXP(totalXp, userId)
 
-  // Sync achievements ke Supabase
   if (userId) {
     const rows = newIds.map(id => ({
       user_id: userId,
@@ -66,11 +65,47 @@ function _updateSRS(wordId, grade, userId) {
   }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────
+// Helper: simpan progress + streak sekaligus ke snapshot
+function _syncSnapshot(progressData, userId) {
+  if (!userId) return
+  const streak = storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0, lastDate: null })
+  const grammar = storage.get(STORAGE_KEYS.GRAMMAR, {})
+  upsertData('user_progress_snapshot', {
+    user_id:    userId,
+    data:       { ...progressData, streak, grammar },
+    updated_at: new Date().toISOString(),
+  }).catch(e => console.warn('[progress] sync:', e))
+}
+
+// ─── Hook ──────────────────────────────────────────────────────
 export function useProgress(userId = null) {
   const [progress, setProgress] = useState(() =>
     storage.get(STORAGE_KEYS.PROGRESS, {})
   )
+  const [dailyLog, setDailyLog] = useState(() =>
+    storage.get(STORAGE_KEYS.DAILY_LOG, {})
+  )
+  const [loading, setLoading] = useState(!!userId)
+
+  // ─── Hydrate dari Supabase on mount ───────────────────────────
+  useEffect(() => {
+    if (!userId) { setLoading(false); return }
+    let cancelled = false
+    setLoading(true)
+
+    Promise.all([
+      loadProgress(userId),
+      loadDailyLog(userId),
+    ]).then(([prog, log]) => {
+      if (!cancelled) {
+        setProgress(prog)
+        setDailyLog(log)
+        setLoading(false)
+      }
+    })
+
+    return () => { cancelled = true }
+  }, [userId])
 
   const markSeen = useCallback((level, wordId) => {
     setProgress(prev => {
@@ -79,13 +114,7 @@ export function useProgress(userId = null) {
       const next = { ...prev, [level]: { ...lvl, seen: [...lvl.seen, wordId] } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
       _addXP(XP_REWARDS.WORD_SEEN, userId)
-
-      if (userId) {
-        upsertData('user_progress_snapshot', {
-          user_id: userId, data: next,
-          updated_at: new Date().toISOString(),
-        }).catch(e => console.warn('[progress] sync:', e))
-      }
+      _syncSnapshot(next, userId)
       return next
     })
   }, [userId])
@@ -100,19 +129,13 @@ export function useProgress(userId = null) {
 
       _updateSRS(wordId, SRS_GRADE.GOOD, userId)
       _addXP(XP_REWARDS.WORD_MASTERED, userId)
+      _syncSnapshot(next, userId)
 
-      if (userId) {
-        upsertData('user_progress_snapshot', {
-          user_id: userId, data: next,
-          updated_at: new Date().toISOString(),
-        }).catch(e => console.warn('[progress] sync:', e))
-      }
-
-      const streak     = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
-      const dailyLog   = storage.get(STORAGE_KEYS.DAILY_LOG, {})
-      const bookmarks  = storage.get(STORAGE_KEYS.BOOKMARKS, [])
-      const quizHist   = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
-      _checkAndUnlock({ progress: next, streak, dailyLog, bookmarks, quizHistory: quizHist }, userId)
+      const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
+      const log       = storage.get(STORAGE_KEYS.DAILY_LOG, {})
+      const bookmarks = storage.get(STORAGE_KEYS.BOOKMARKS, [])
+      const quizHist  = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
+      _checkAndUnlock({ progress: next, streak, dailyLog: log, bookmarks, quizHistory: quizHist }, userId)
 
       return next
     })
@@ -125,41 +148,38 @@ export function useProgress(userId = null) {
       const next     = { ...prev, [level]: { ...lvl, mastered } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
       _updateSRS(wordId, SRS_GRADE.WRONG, userId)
-
-      if (userId) {
-        upsertData('user_progress_snapshot', {
-          user_id: userId, data: next,
-          updated_at: new Date().toISOString(),
-        }).catch(e => console.warn('[progress] sync:', e))
-      }
+      _syncSnapshot(next, userId)
       return next
     })
   }, [userId])
 
   const logActivity = useCallback((studied = 0, correct = 0) => {
-    const key    = toDateKey()
-    const log    = storage.get(STORAGE_KEYS.DAILY_LOG, {})
-    const today  = log[key] || { studied: 0, correct: 0 }
+    const key   = toDateKey()
+    const log   = storage.get(STORAGE_KEYS.DAILY_LOG, {})
+    const today = log[key] || { studied: 0, correct: 0 }
     const newLog = {
       ...log,
       [key]: { studied: today.studied + studied, correct: today.correct + correct },
     }
     storage.set(STORAGE_KEYS.DAILY_LOG, newLog)
+    setDailyLog(newLog)
+
     if (correct > 0) _addXP(XP_REWARDS.QUIZ_CORRECT * correct, userId)
 
     if (userId) {
       upsertData('daily_activity', {
-        user_id: userId, activity_date: key,
+        user_id:       userId,
+        activity_date: key,
         words_studied: newLog[key].studied,
-        quiz_score: newLog[key].correct,
+        quiz_score:    newLog[key].correct,
       }).catch(e => console.warn('[activity] sync:', e))
     }
 
-    const progress   = storage.get(STORAGE_KEYS.PROGRESS, {})
-    const streak     = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
-    const bookmarks  = storage.get(STORAGE_KEYS.BOOKMARKS, [])
-    const quizHist   = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
-    _checkAndUnlock({ progress, streak, dailyLog: newLog, bookmarks, quizHistory: quizHist }, userId)
+    const prog      = storage.get(STORAGE_KEYS.PROGRESS, {})
+    const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
+    const bookmarks = storage.get(STORAGE_KEYS.BOOKMARKS, [])
+    const quizHist  = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
+    _checkAndUnlock({ progress: prog, streak, dailyLog: newLog, bookmarks, quizHistory: quizHist }, userId)
   }, [userId])
 
   const reviewSRS = useCallback((wordId, grade) => {
@@ -177,7 +197,8 @@ export function useProgress(userId = null) {
   )
 
   return {
-    progress, markSeen, markMastered, unmarkMastered,
+    progress, dailyLog, loading,
+    markSeen, markMastered, unmarkMastered,
     logActivity, reviewSRS, getLevelProgress, totalMastered,
   }
 }

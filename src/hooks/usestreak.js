@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { storage, STORAGE_KEYS, upsertData } from '../utils/storage'
+import { useState, useCallback, useEffect } from 'react'
+import { storage, STORAGE_KEYS, upsertData, loadStreak } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
 
@@ -13,10 +13,40 @@ function _addXP(amount, userId) {
   }
 }
 
+// Simpan streak ke dalam user_progress_snapshot (field data.streak)
+function _syncStreak(streakData, userId) {
+  if (!userId) return
+  // Baca snapshot existing agar tidak overwrite field lain (progress, grammar)
+  const progress = storage.get(STORAGE_KEYS.PROGRESS, {})
+  const grammar  = storage.get(STORAGE_KEYS.GRAMMAR, {})
+  upsertData('user_progress_snapshot', {
+    user_id:    userId,
+    data:       { progress, streak: streakData, grammar },
+    updated_at: new Date().toISOString(),
+  }).catch(e => console.warn('[streak] sync:', e))
+}
+
 export function useStreak(userId = null) {
   const [streak, setStreak] = useState(() =>
     storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0, lastDate: null })
   )
+  const [loading, setLoading] = useState(!!userId)
+
+  // ─── Hydrate dari Supabase on mount ───────────────────────────
+  useEffect(() => {
+    if (!userId) { setLoading(false); return }
+    let cancelled = false
+    setLoading(true)
+
+    loadStreak(userId).then(data => {
+      if (!cancelled) {
+        setStreak(data)
+        setLoading(false)
+      }
+    })
+
+    return () => { cancelled = true }
+  }, [userId])
 
   const recordActivity = useCallback(() => {
     setStreak(prev => {
@@ -35,15 +65,19 @@ export function useStreak(userId = null) {
       }
       storage.set(STORAGE_KEYS.STREAK, next)
       _addXP(XP_REWARDS.STREAK_DAY, userId)
+      _syncStreak(next, userId)
 
       // Check achievements
-      const progress   = storage.get(STORAGE_KEYS.PROGRESS, {})
-      const dailyLog   = storage.get(STORAGE_KEYS.DAILY_LOG, {})
-      const bookmarks  = storage.get(STORAGE_KEYS.BOOKMARKS, [])
-      const quizHist   = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
-      const achs       = storage.get(STORAGE_KEYS.ACHIEVEMENTS, {})
+      const progress  = storage.get(STORAGE_KEYS.PROGRESS, {})
+      const dailyLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})
+      const bookmarks = storage.get(STORAGE_KEYS.BOOKMARKS, [])
+      const quizHist  = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
+      const achs      = storage.get(STORAGE_KEYS.ACHIEVEMENTS, {})
       const currentIds = new Set(Object.keys(achs))
-      const newIds     = checkAchievements({ progress, streak: next, dailyLog, bookmarks, quizHistory: quizHist, unlockedIds: currentIds })
+      const newIds    = checkAchievements({
+        progress, streak: next, dailyLog, bookmarks,
+        quizHistory: quizHist, unlockedIds: currentIds,
+      })
 
       if (newIds.length > 0) {
         const now = Date.now()
@@ -60,8 +94,9 @@ export function useStreak(userId = null) {
 
         if (userId) {
           const rows = newIds.map(id => ({
-            user_id: userId, achievement_id: id,
-            unlocked_at: new Date(now).toISOString(),
+            user_id:        userId,
+            achievement_id: id,
+            unlocked_at:    new Date(now).toISOString(),
           }))
           upsertData('user_achievements', rows).catch(e => console.warn('[ach] sync:', e))
         }
@@ -72,5 +107,5 @@ export function useStreak(userId = null) {
     })
   }, [userId])
 
-  return { streak, recordActivity }
+  return { streak, recordActivity, loading }
 }

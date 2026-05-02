@@ -1,11 +1,28 @@
-import { useState, useCallback } from 'react'
-import { storage, STORAGE_KEYS, upsertData } from '../utils/storage'
+import { useState, useCallback, useEffect } from 'react'
+import { storage, STORAGE_KEYS, upsertData, loadSRS } from '../utils/storage'
 import { sm2, getDueWords, GRADE } from '../utils/srs'
 
 export function useSRS(userId = null) {
   const [srsData, setSrsData] = useState(() =>
     storage.get(STORAGE_KEYS.SRS, {})
   )
+  const [loading, setLoading] = useState(!!userId)
+
+  // ─── Hydrate dari Supabase on mount ───────────────────────────
+  useEffect(() => {
+    if (!userId) { setLoading(false); return }
+    let cancelled = false
+    setLoading(true)
+
+    loadSRS(userId).then(data => {
+      if (!cancelled) {
+        setSrsData(data)
+        setLoading(false)
+      }
+    })
+
+    return () => { cancelled = true }
+  }, [userId])
 
   const reviewWord = useCallback((wordId, grade) => {
     setSrsData(prev => {
@@ -16,9 +33,12 @@ export function useSRS(userId = null) {
 
       if (userId) {
         upsertData('user_srs', {
-          user_id: userId, word_id: wordId,
-          interval: next.interval, ease_factor: next.easeFactor,
-          next_review: next.nextReview, reps: next.reps,
+          user_id:     userId,
+          word_id:     wordId,
+          interval:    next.interval,
+          ease_factor: next.easeFactor,
+          next_review: next.nextReview,
+          reps:        next.reps,
         }).catch(e => console.warn('[srs] sync:', e))
       }
       return updated
@@ -45,5 +65,5 @@ export function useSRS(userId = null) {
     })
   }, [])
 
-  return { srsData, reviewWord, getDue, getCardInfo, countDue, resetCard, GRADE }
+  return { srsData, reviewWord, getDue, getCardInfo, countDue, resetCard, GRADE, loading }
 }

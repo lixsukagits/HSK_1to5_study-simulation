@@ -1,10 +1,28 @@
-import { useState, useCallback } from 'react'
-import { storage, STORAGE_KEYS, upsertData, deleteData } from '../utils/storage'
+import { useState, useCallback, useEffect } from 'react'
+import { storage, STORAGE_KEYS, upsertData, deleteData, loadBookmarks } from '../utils/storage'
 
 export function useBookmark(userId = null) {
   const [bookmarks, setBookmarks] = useState(() =>
     storage.get(STORAGE_KEYS.BOOKMARKS, [])
   )
+  const [loading, setLoading] = useState(!!userId)
+
+  // ─── Hydrate dari Supabase saat mount / userId berubah ────────
+  useEffect(() => {
+    if (!userId) {
+      setLoading(false)
+      return
+    }
+    let cancelled = false
+    setLoading(true)
+    loadBookmarks(userId).then(data => {
+      if (!cancelled) {
+        setBookmarks(data)
+        setLoading(false)
+      }
+    })
+    return () => { cancelled = true }
+  }, [userId])
 
   const bookmarkSet = new Set(bookmarks)
 
@@ -39,5 +57,5 @@ export function useBookmark(userId = null) {
     setBookmarks([])
   }, [])
 
-  return { bookmarks, bookmarkSet, toggle, isBookmarked, clear }
+  return { bookmarks, bookmarkSet, toggle, isBookmarked, clear, loading }
 }
