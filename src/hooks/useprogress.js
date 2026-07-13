@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { storage, STORAGE_KEYS, upsertData, loadProgress, loadDailyLog } from '../utils/storage'
+import { storage, STORAGE_KEYS, upsertData, syncSnapshotField, loadProgress, loadDailyLog } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { sm2, GRADE as SRS_GRADE } from '../utils/srs'
 import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
@@ -65,18 +65,6 @@ function _updateSRS(wordId, grade, userId) {
   }
 }
 
-// Helper: simpan progress + streak sekaligus ke snapshot
-function _syncSnapshot(progressData, userId) {
-  if (!userId) return
-  const streak = storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0, lastDate: null })
-  const grammar = storage.get(STORAGE_KEYS.GRAMMAR, {})
-  upsertData('user_progress_snapshot', {
-    user_id:    userId,
-    data:       { ...progressData, streak, grammar },
-    updated_at: new Date().toISOString(),
-  }).catch(e => console.warn('[progress] sync:', e))
-}
-
 // ─── Hook ──────────────────────────────────────────────────────
 export function useProgress(userId = null) {
   const [progress, setProgress] = useState(() =>
@@ -107,6 +95,13 @@ export function useProgress(userId = null) {
     return () => { cancelled = true }
   }, [userId])
 
+  // Sync progress ke snapshot (merge otomatis dengan streak/grammar/tasks/confusables
+  // via syncSnapshotField — lihat src/utils/storage.js)
+  const _sync = useCallback((progressData) => {
+    if (!userId) return
+    syncSnapshotField(userId, 'progress', progressData).catch(e => console.warn('[progress] sync:', e))
+  }, [userId])
+
   const markSeen = useCallback((level, wordId) => {
     setProgress(prev => {
       const lvl = prev[level] || { seen: [], mastered: [] }
@@ -114,10 +109,10 @@ export function useProgress(userId = null) {
       const next = { ...prev, [level]: { ...lvl, seen: [...lvl.seen, wordId] } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
       _addXP(XP_REWARDS.WORD_SEEN, userId)
-      _syncSnapshot(next, userId)
+      _sync(next)
       return next
     })
-  }, [userId])
+  }, [userId, _sync])
 
   const markMastered = useCallback((level, wordId) => {
     setProgress(prev => {
@@ -129,7 +124,7 @@ export function useProgress(userId = null) {
 
       _updateSRS(wordId, SRS_GRADE.GOOD, userId)
       _addXP(XP_REWARDS.WORD_MASTERED, userId)
-      _syncSnapshot(next, userId)
+      _sync(next)
 
       const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
       const log       = storage.get(STORAGE_KEYS.DAILY_LOG, {})
@@ -139,7 +134,7 @@ export function useProgress(userId = null) {
 
       return next
     })
-  }, [userId])
+  }, [userId, _sync])
 
   const unmarkMastered = useCallback((level, wordId) => {
     setProgress(prev => {
@@ -148,10 +143,10 @@ export function useProgress(userId = null) {
       const next     = { ...prev, [level]: { ...lvl, mastered } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
       _updateSRS(wordId, SRS_GRADE.WRONG, userId)
-      _syncSnapshot(next, userId)
+      _sync(next)
       return next
     })
-  }, [userId])
+  }, [userId, _sync])
 
   const logActivity = useCallback((studied = 0, correct = 0) => {
     const key   = toDateKey()

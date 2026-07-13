@@ -14,6 +14,8 @@ import { Quiz }           from './pages/quiz'
 import { Settings }       from './pages/settings'
 import { Vocab }          from './pages/vocab'
 import { Grammar }        from './pages/grammar'
+import { Tasks }          from './pages/tasks'
+import { Confusables }    from './pages/confusables'
 import { StudyToday }     from './pages/studytoday'
 import { Bookmarks }      from './pages/bookmarks'
 import { Achievements }   from './pages/achievements'
@@ -58,6 +60,10 @@ export default function App() {
           <Route path="/vocab/:level"  element={<Vocab />}            />
           <Route path="/grammar/:level" element={<Grammar />} />
           <Route path="/grammar" element={<Navigate to="/grammar/1" replace />} />
+          <Route path="/tasks/:level"  element={<Tasks />}            />
+          <Route path="/tasks"         element={<Navigate to="/tasks/1" replace />} />
+          <Route path="/confusables/:level" element={<Confusables />} />
+          <Route path="/confusables"   element={<Navigate to="/confusables/1" replace />} />
           <Route path="/flashcards"    element={<FlashCards />}       />
           <Route path="/quiz"          element={<Quiz />}             />
           <Route path="/wordmatch"     element={<WordMatch />}        />

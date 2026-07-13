@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { storage, STORAGE_KEYS, upsertData, loadStreak } from '../utils/storage'
+import { storage, STORAGE_KEYS, upsertData, syncSnapshotField, loadStreak } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
 
@@ -11,19 +11,6 @@ function _addXP(amount, userId) {
     upsertData('user_xp', { user_id: userId, total: next.total })
       .catch(e => console.warn('[xp streak] sync:', e))
   }
-}
-
-// Simpan streak ke dalam user_progress_snapshot (field data.streak)
-function _syncStreak(streakData, userId) {
-  if (!userId) return
-  // Baca snapshot existing agar tidak overwrite field lain (progress, grammar)
-  const progress = storage.get(STORAGE_KEYS.PROGRESS, {})
-  const grammar  = storage.get(STORAGE_KEYS.GRAMMAR, {})
-  upsertData('user_progress_snapshot', {
-    user_id:    userId,
-    data:       { progress, streak: streakData, grammar },
-    updated_at: new Date().toISOString(),
-  }).catch(e => console.warn('[streak] sync:', e))
 }
 
 export function useStreak(userId = null) {
@@ -48,6 +35,13 @@ export function useStreak(userId = null) {
     return () => { cancelled = true }
   }, [userId])
 
+  // Sync streak ke snapshot (merge otomatis dengan progress/grammar/tasks/confusables
+  // via syncSnapshotField — lihat src/utils/storage.js)
+  const _sync = useCallback((streakData) => {
+    if (!userId) return
+    syncSnapshotField(userId, 'streak', streakData).catch(e => console.warn('[streak] sync:', e))
+  }, [userId])
+
   const recordActivity = useCallback(() => {
     setStreak(prev => {
       const today = toDateKey()
@@ -65,7 +59,7 @@ export function useStreak(userId = null) {
       }
       storage.set(STORAGE_KEYS.STREAK, next)
       _addXP(XP_REWARDS.STREAK_DAY, userId)
-      _syncStreak(next, userId)
+      _sync(next)
 
       // Check achievements
       const progress  = storage.get(STORAGE_KEYS.PROGRESS, {})
@@ -105,7 +99,7 @@ export function useStreak(userId = null) {
 
       return next
     })
-  }, [userId])
+  }, [userId, _sync])
 
   return { streak, recordActivity, loading }
 }

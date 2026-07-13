@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
-import { hskDataComplete } from '../data'
+import { hskDataComplete, topicLabelsByLevel } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useBookmark } from '../hooks/usebookmark'
@@ -20,6 +20,11 @@ export function Vocab() {
   const lvl   = HSK_LEVELS.find(l => l.level === Number(level)) || HSK_LEVELS[0]
   const vocab = hskDataComplete[lvl.level] || []
 
+  // Label kategori topic untuk level ini — object kosong kalau level belum
+  // punya field `topic` di vocabnya (saat ini baru HSK1)
+  const topicLabels = topicLabelsByLevel[lvl.level] || {}
+  const hasTopics   = Object.keys(topicLabels).length > 0
+
   const { userId } = useAuthContext()
   const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
@@ -29,10 +34,11 @@ export function Vocab() {
   const masteredSet = new Set(lvlPrg.mastered || [])
   const seenSet     = new Set(lvlPrg.seen || [])
 
-  const [search,   setSearch]   = useState('')
-  const [filter,   setFilter]   = useState('all')
-  const [page,     setPage]     = useState(1)
-  const [expanded, setExpanded] = useState(null)
+  const [search,      setSearch]      = useState('')
+  const [filter,       setFilter]      = useState('all')
+  const [topicFilter,  setTopicFilter] = useState('all')
+  const [page,         setPage]        = useState(1)
+  const [expanded,     setExpanded]    = useState(null)
 
   const filtered = useMemo(() => {
     let list = vocab
@@ -45,8 +51,9 @@ export function Vocab() {
     if (filter === 'mastered')  list = list.filter(v => masteredSet.has(v.id))
     if (filter === 'unseen')    list = list.filter(v => !seenSet.has(v.id))
     if (filter === 'bookmarked')list = list.filter(v => bookmarkSet.has(v.id))
+    if (hasTopics && topicFilter !== 'all') list = list.filter(v => v.topic === topicFilter)
     return list
-  }, [vocab, search, filter, lvlPrg, bookmarkSet])
+  }, [vocab, search, filter, topicFilter, hasTopics, lvlPrg, bookmarkSet])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const displayed  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -61,6 +68,8 @@ export function Vocab() {
     }
     markSeen(lvl.level, kata.id)
   }
+
+  function resetPage() { setPage(1); setSearch(''); setFilter('all'); setTopicFilter('all') }
 
   const pct = Math.min(100, Math.round((masteredSet.size / lvl.totalKata) * 100))
 
@@ -92,7 +101,7 @@ export function Vocab() {
       <div className="flex gap-1.5 mb-6 flex-wrap">
         {HSK_LEVELS.map(l => (
           <Link key={l.level} to={`/vocab/${l.level}`}
-            onClick={() => { setPage(1); setSearch(''); setFilter('all') }}
+            onClick={resetPage}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${
               l.level === lvl.level ? `badge badge-level-${l.level}` : 'text-white/25 hover:text-white/60 hover:bg-white/5'
             }`}
@@ -127,6 +136,26 @@ export function Vocab() {
         </div>
       </div>
 
+      {/* Topic filter — cuma muncul kalau level ini punya field `topic` di vocabnya */}
+      {hasTopics && (
+        <div className="flex gap-1.5 mb-5 flex-wrap">
+          <button onClick={() => { setTopicFilter('all'); setPage(1) }}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+              topicFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+            }`}>
+            Semua Topik
+          </button>
+          {Object.entries(topicLabels).map(([key, label]) => (
+            <button key={key} onClick={() => { setTopicFilter(key); setPage(1) }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                topicFilter === key ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+              }`}>
+              {label.id}
+            </button>
+          ))}
+        </div>
+      )}
+
       <p className="text-white/20 text-xs mb-4">{filtered.length} kata{search ? ` · "${search}"` : ''}</p>
 
       {/* Grid */}
@@ -160,6 +189,9 @@ export function Vocab() {
                   <div className="flex-1 min-w-0">
                     <div className="text-white/35 text-xs">{v.pinyin}</div>
                     <div className="text-white/75 text-sm font-medium truncate">{v.arti}</div>
+                    {hasTopics && v.topic && topicLabels[v.topic] && (
+                      <div className="text-white/20 text-[10px] mt-0.5">{topicLabels[v.topic].id}</div>
+                    )}
                   </div>
 
                   {/* Actions */}

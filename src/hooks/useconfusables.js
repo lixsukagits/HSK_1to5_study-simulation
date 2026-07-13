@@ -1,14 +1,14 @@
-// hooks/usegrammar.js
-// Tracking grammar "sudah paham" per user per level
-// Disimpan di: user_progress_snapshot → data.grammar
-// Shape: { 1: ['g1-001', 'g1-002', ...], 2: [...], ... }
+// hooks/useconfusables.js
+// Tracking grup kata "gampang ketuker" yang user rasa sudah paham bedanya
+// Disimpan di: user_progress_snapshot → data.confusables
+// Shape: { 1: ['cf-01', 'cf-02', ...], 2: [...], ... }
 
 import { useState, useCallback, useEffect } from 'react'
-import { storage, STORAGE_KEYS, syncSnapshotField, loadGrammar } from '../utils/storage'
+import { storage, STORAGE_KEYS, syncSnapshotField, loadConfusables } from '../utils/storage'
 
-export function useGrammar(userId) {
+export function useConfusables(userId) {
   const [understood, setUnderstood] = useState(() =>
-    storage.get(STORAGE_KEYS.GRAMMAR, {})
+    storage.get(STORAGE_KEYS.CONFUSABLES, {})
   )
   const [loading, setLoading] = useState(!!userId)
 
@@ -18,7 +18,7 @@ export function useGrammar(userId) {
     let cancelled = false
     setLoading(true)
 
-    loadGrammar(userId).then(data => {
+    loadConfusables(userId).then(data => {
       if (!cancelled) {
         setUnderstood(data)
         setLoading(false)
@@ -28,33 +28,33 @@ export function useGrammar(userId) {
     return () => { cancelled = true }
   }, [userId])
 
-  // Sync grammar ke snapshot (merge otomatis dengan progress/streak/tasks/confusables)
-  const _sync = useCallback((grammarData) => {
+  // Sync confusables ke snapshot (merge otomatis dengan progress/streak/grammar/tasks)
+  const _sync = useCallback((confusablesData) => {
     if (!userId) return
-    syncSnapshotField(userId, 'grammar', grammarData).catch(e => console.warn('[grammar] sync:', e))
+    syncSnapshotField(userId, 'confusables', confusablesData).catch(e => console.warn('[confusables] sync:', e))
   }, [userId])
 
-  const isUnderstood = useCallback((level, id) => {
-    return (understood[level] || []).includes(id)
+  const isUnderstood = useCallback((level, groupId) => {
+    return (understood[level] || []).includes(groupId)
   }, [understood])
 
-  const markUnderstood = useCallback((level, id) => {
+  const markUnderstood = useCallback((level, groupId) => {
     setUnderstood(prev => {
       const lvlSet = new Set(prev[level] || [])
-      lvlSet.add(id)
+      lvlSet.add(groupId)
       const next = { ...prev, [level]: Array.from(lvlSet) }
-      storage.set(STORAGE_KEYS.GRAMMAR, next)
+      storage.set(STORAGE_KEYS.CONFUSABLES, next)
       _sync(next)
       return next
     })
   }, [userId, _sync])
 
-  const unmarkUnderstood = useCallback((level, id) => {
+  const unmarkUnderstood = useCallback((level, groupId) => {
     setUnderstood(prev => {
       const lvlSet = new Set(prev[level] || [])
-      lvlSet.delete(id)
+      lvlSet.delete(groupId)
       const next = { ...prev, [level]: Array.from(lvlSet) }
-      storage.set(STORAGE_KEYS.GRAMMAR, next)
+      storage.set(STORAGE_KEYS.CONFUSABLES, next)
       _sync(next)
       return next
     })

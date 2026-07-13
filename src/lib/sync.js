@@ -47,7 +47,7 @@ export async function migrateFromLocalStorage(userId) {
 
   try {
     await Promise.all([
-      migrateProgress(userId),
+      migrateSnapshot(userId), // progress + streak + grammar + tasks + confusables (1 row, 1 upsert)
       migrateBookmarks(userId),
       migrateDailyActivity(userId),
       migrateAchievements(userId),
@@ -62,18 +62,39 @@ export async function migrateFromLocalStorage(userId) {
   }
 }
 
-// progress: { level: { seen: [], mastered: [] } }
-async function migrateProgress(userId) {
-  const raw = localStorage.getItem('hsk_progress')
-  if (!raw) return
+// user_progress_snapshot.data = { progress, streak, grammar, tasks, confusables }
+// PENTING: kelimanya harus jadi SATU upsert supaya tidak saling menimpa
+// (sebelumnya migrateProgress upsert sendiri-sendiri dan menimpa field lain
+// di kolom `data` yang sama — sekarang digabung di sini).
+async function migrateSnapshot(userId) {
+  const readJSON = (key) => {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    try { return JSON.parse(raw) } catch { return null }
+  }
+
+  const progress    = readJSON('hsk_progress')
+  const streak      = readJSON('hsk_streak')
+  const grammar     = readJSON('hsk_grammar')
+  const tasks       = readJSON('hsk_tasks')
+  const confusables = readJSON('hsk_confusables')
+
+  // Kalau semuanya null (user baru, belum pernah pakai app versi localStorage-only), skip
+  if (!progress && !streak && !grammar && !tasks && !confusables) return
+
   try {
-    const data = JSON.parse(raw)
     await supabase.from('user_progress_snapshot').upsert({
       user_id: userId,
-      data,
+      data: {
+        progress:    progress    ?? {},
+        streak:      streak      ?? { count: 0, longestStreak: 0, lastDate: null },
+        grammar:     grammar     ?? {},
+        tasks:       tasks       ?? {},
+        confusables: confusables ?? {},
+      },
       updated_at: new Date().toISOString(),
     })
-  } catch (e) { console.warn('[sync] Skip progress:', e) }
+  } catch (e) { console.warn('[sync] Skip snapshot (progress/streak/grammar/tasks/confusables):', e) }
 }
 
 // bookmarks: array of wordId

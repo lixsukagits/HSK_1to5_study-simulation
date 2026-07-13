@@ -1,0 +1,203 @@
+// HSK 1 — Task Outline (任务大纲)
+// Sumber: hsk1-cn.pdf — 任务大纲 (15 kompetensi tugas komunikasi)
+// Tiap tugas berisi daftar skill (listening/speaking/reading) sesuai jumlah
+// poin asli di PDF (tidak semua tugas punya 4 poin — beberapa 3 atau 5).
+//
+// Struktur: { id, code, titleZh, titleId, skills: [{ type, textId }] }
+
+export const hsk1Tasks = [
+  {
+    id: 'task-1-01',
+    code: '一',
+    titleZh: '问答个人基本信息',
+    titleId: 'Tanya-Jawab Info Pribadi Dasar',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau perkenalan sederhana tentang info pribadi (nama, kewarganegaraan, usia, gender, hobi, kebiasaan, identitas, anggota keluarga, teman, keahlian) dalam situasi seperti pesta, lapor daftar ulang, atau mengikuti acara.' },
+      { type: 'speaking', textId: 'Bisa menanyakan info pribadi dasar orang lain, dan menjawab pertanyaan serupa tentang diri sendiri.' },
+      { type: 'speaking', textId: 'Bisa memperkenalkan info pribadi dasar diri sendiri secara sederhana.' },
+      { type: 'reading', textId: 'Bisa mengenali info pribadi dasar pada kartu nama, KTP, kartu pelajar, atau bacaan singkat.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-02',
+    code: '二',
+    titleZh: '问答事件信息',
+    titleId: 'Tanya-Jawab Info Kegiatan',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau info sederhana tentang kegiatan sehari-hari: tanggal, waktu, tempat, arah, peserta, nomor telepon.' },
+      { type: 'speaking', textId: 'Bisa menanyakan info kegiatan sederhana kepada keluarga, teman, atau teman sekelas, dan menjawab pertanyaan serupa.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan info kegiatan sederhana kepada orang lain.' },
+      { type: 'reading', textId: 'Bisa membaca info kegiatan sederhana di tempat umum seperti rumah sakit, bioskop, atau perpustakaan.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-03',
+    code: '三',
+    titleZh: '问答物品信息',
+    titleId: 'Tanya-Jawab Info Barang',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau perkenalan sederhana tentang barang (nama barang harian/alat belajar, ukuran, jumlah, kondisi baik/buruk, baru/lama) di rumah, asrama, mal, atau sekolah.' },
+      { type: 'speaking', textId: 'Bisa menanyakan info barang sehari-hari secara sederhana, dan menjawab pertanyaan serupa.' },
+      { type: 'speaking', textId: 'Bisa menyebutkan nama barang dan mendeskripsikan cirinya secara sederhana.' },
+      { type: 'reading', textId: 'Bisa mengenali nama barang serta deskripsi ukuran, jumlah, dan kepemilikan sederhana di lingkungan sehari-hari.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-04',
+    code: '四',
+    titleZh: '问答天气',
+    titleId: 'Tanya-Jawab Cuaca',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau info sederhana tentang cuaca (baik/buruk, dingin/panas) di suatu tempat.' },
+      { type: 'speaking', textId: 'Bisa menanyakan dan menjawab pertanyaan tentang cuaca suatu tempat.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan kondisi cuaca suatu tempat secara sederhana, serta menyatakan suka/tidak suka terhadap cuaca tersebut.' },
+      { type: 'reading', textId: 'Bisa membaca info cuaca sederhana seperti dingin/panas/hujan/salju.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-05',
+    code: '五',
+    titleZh: '问答环境信息',
+    titleId: 'Tanya-Jawab Info Lingkungan',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau perkenalan sederhana tentang suatu tempat/lingkungan umum seperti sekolah, bioskop, supermarket.' },
+      { type: 'speaking', textId: 'Bisa menanyakan dan menjawab info sederhana tentang suatu lingkungan/tempat (ukuran, kondisi, arah), serta menyatakan suka/tidak suka.' },
+      { type: 'speaking', textId: 'Bisa mendeskripsikan suatu tempat/lingkungan secara sederhana (ukuran, arah, kesukaan pribadi).' },
+      { type: 'reading', textId: 'Bisa mengenali nama tempat dan arah pada papan petunjuk sehari-hari.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-06',
+    code: '六',
+    titleZh: '日常言语交往',
+    titleId: 'Interaksi Verbal Sehari-hari',
+    skills: [
+      { type: 'listening', textId: 'Memahami dan membalas ungkapan sopan sederhana (halo, terima kasih, maaf, sampai jumpa) dalam situasi pesta, perpisahan, atau berkenalan dengan teman baru.' },
+      { type: 'speaking', textId: 'Bisa memahami permintaan/pertanyaan sederhana orang lain dan mengajukan permintaan/pertanyaan serupa (berkenalan, minta bantuan, memilih, menelepon).' },
+      { type: 'speaking', textId: 'Bisa memahami ungkapan kebutuhan/perasaan orang lain dan mengungkapkan kebutuhan/perasaan sendiri secara sederhana (mau apa, senang atau tidak).' },
+      { type: 'reading', textId: 'Bisa membaca ungkapan sopan dan maksud sederhana pada media sosial, SMS, atau email.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-07',
+    code: '七',
+    titleZh: '问答饮食喜好',
+    titleId: 'Tanya-Jawab Kesukaan Makan',
+    skills: [
+      { type: 'listening', textId: 'Memahami ungkapan sederhana tentang makan: keinginan makan, peserta makan, makanan favorit, menu tiga kali sehari, kondisi makan, waktu dan tempat makan.' },
+      { type: 'speaking', textId: 'Bisa menanyakan dan menjawab pertanyaan sederhana tentang kebiasaan makan, waktu makan, dan memasak sehari-hari.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan kesukaan makan dan kebiasaan memasak diri sendiri secara sederhana.' },
+      { type: 'reading', textId: 'Bisa mengenali nama makanan umum di restoran atau supermarket.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-08',
+    code: '八',
+    titleZh: '问答出行信息',
+    titleId: 'Tanya-Jawab Info Bepergian',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan atau info sederhana tentang cara dan jadwal bepergian (berangkat kerja, sekolah, keluar rumah).' },
+      { type: 'speaking', textId: 'Bisa menanyakan dan menjawab pertanyaan sederhana tentang cara dan jadwal bepergian sehari-hari.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan info bepergian diri sendiri, keluarga, atau teman secara sederhana.' },
+      { type: 'speaking', textId: 'Bisa berkomunikasi sederhana saat bertanya arah/lokasi kepada orang lain.' },
+      { type: 'reading', textId: 'Bisa membaca info dasar tentang kereta, pesawat, dan moda transportasi umum lainnya.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-09',
+    code: '九',
+    titleZh: '问答商品信息',
+    titleId: 'Tanya-Jawab Info Barang Dagangan',
+    skills: [
+      { type: 'listening', textId: 'Memahami penjelasan sederhana tentang barang dagangan (nama, harga) dari penjual atau teman, serta pertanyaan tentang minat beli.' },
+      { type: 'speaking', textId: 'Bisa menanyakan info barang (harga, stok/ketersediaan), dan menjawab pertanyaan serupa.' },
+      { type: 'speaking', textId: 'Bisa menyatakan minat/niat membeli, dan menjelaskan info barang yang sudah dibeli.' },
+      { type: 'reading', textId: 'Bisa membaca label barang sederhana seperti nama, harga, dan tanggal.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-10',
+    code: '十',
+    titleZh: '告知生病、探病',
+    titleId: 'Memberi Tahu Sakit & Menjenguk',
+    skills: [
+      { type: 'listening', textId: 'Memahami ungkapan sederhana tentang seseorang yang sakit/ingin berobat, saran sederhana (makan, istirahat), dan hiburan sederhana dari keluarga/teman.' },
+      { type: 'speaking', textId: 'Bisa memberi tahu orang lain saat diri sendiri sakit, dan menyatakan niat untuk berobat.' },
+      { type: 'speaking', textId: 'Bisa menyatakan niat menjenguk dan memberi hiburan sederhana saat kerabat/teman sakit.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-11',
+    code: '十一',
+    titleZh: '交流休闲活动',
+    titleId: 'Bertukar Cerita Aktivitas Santai',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan sederhana tentang aktivitas santai sehari-hari, atau info kesukaan aktivitas santai seseorang (membaca, bernyanyi, menonton TV, dsb.).' },
+      { type: 'speaking', textId: 'Bisa menanyakan aktivitas santai kesukaan keluarga/teman/teman sekelas, dan menjawab pertanyaan serupa tentang diri sendiri.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan kesukaan dan jadwal aktivitas santai diri sendiri secara sederhana.' },
+      { type: 'reading', textId: 'Bisa membaca info sederhana tentang aktivitas santai seperti waktu dan tempat kegiatan.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-12',
+    code: '十二',
+    titleZh: '介绍学习情况',
+    titleId: 'Menjelaskan Kondisi Belajar',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan sederhana dari teman/guru/keluarga tentang kondisi belajar, atau info kondisi belajar dari teman (sekolah, mata pelajaran, jam pelajaran).' },
+      { type: 'speaking', textId: 'Bisa menanyakan info kondisi belajar teman, dan menjawab pertanyaan serupa.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan kondisi belajar diri sendiri kepada guru/teman/keluarga.' },
+      { type: 'reading', textId: 'Bisa membaca info jadwal pelajaran seperti mata pelajaran dan jam.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-13',
+    code: '十三',
+    titleZh: '交流学校情况、课后活动',
+    titleId: 'Bertukar Cerita Kondisi Sekolah & Kegiatan',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan sederhana tentang kondisi sekolah/kegiatan setelah sekolah, atau info sederhana tentang belajar dan kegiatan setelah sekolah (sekolah, guru, teman sekelas, jadwal).' },
+      { type: 'speaking', textId: 'Bisa menanyakan kondisi sekolah dan kegiatan setelah sekolah kepada teman, dan menjawab pertanyaan serupa dari keluarga/teman.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan kondisi sekolah dan kegiatan setelah sekolah diri sendiri secara sederhana.' },
+      { type: 'reading', textId: 'Bisa membaca info sederhana tentang belajar/kegiatan setelah sekolah di jadwal pelajaran atau kartu info siswa.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-14',
+    code: '十四',
+    titleZh: '交流工作信息',
+    titleId: 'Bertukar Info Pekerjaan',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan sederhana dari keluarga/rekan kerja/teman tentang info pekerjaan, atau perkenalan sederhana info pekerjaan orang lain (jenis pekerjaan, jam kerja, tempat kerja, suka/tidak suka).' },
+      { type: 'speaking', textId: 'Bisa menanyakan info pekerjaan/profesi orang lain, dan menjawab pertanyaan serupa.' },
+      { type: 'speaking', textId: 'Bisa menjelaskan profesi atau isi pekerjaan diri sendiri, keluarga, atau teman secara sederhana.' },
+      { type: 'reading', textId: 'Bisa membaca info sederhana tentang pekerjaan seseorang: nama profesi, jam kerja, tempat kerja.' },
+    ],
+    level: 1,
+  },
+  {
+    id: 'task-1-15',
+    code: '十五',
+    titleZh: '问答中国传统饮食',
+    titleId: 'Tanya-Jawab Makanan Tradisional Tiongkok',
+    skills: [
+      { type: 'listening', textId: 'Memahami pertanyaan sederhana tentang makanan tradisional Tiongkok, atau perkenalan sederhana kebiasaan makan tradisional Tiongkok (makanan/minuman favorit orang Tiongkok).' },
+      { type: 'speaking', textId: 'Bisa menanyakan tentang makanan tradisional Tiongkok, atau menjelaskan kebiasaan makan tradisional orang Tiongkok dan menyatakan kesukaan diri sendiri/keluarga (bakpao, pangsit, mi, teh, dsb.).' },
+      { type: 'reading', textId: 'Bisa membaca info makanan tradisional Tiongkok pada menu, seperti bakpao, pangsit, mi, teh.' },
+    ],
+    level: 1,
+  },
+]

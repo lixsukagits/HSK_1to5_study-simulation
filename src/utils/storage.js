@@ -50,6 +50,8 @@ export const STORAGE_KEYS = {
   ACHIEVEMENTS: 'achievements',  // { achievementId: { unlockedAt } }
   XP:           'xp',            // { total }
   GRAMMAR:      'grammar',       // { level: [id, ...] }
+  TASKS:        'tasks',         // { level: [id, ...] } — task (任务大纲) yang dirasa sudah dikuasai
+  CONFUSABLES:  'confusables',   // { level: [id, ...] } — grup confusable yang sudah "clear" dipahami
 }
 
 // ─── Supabase Abstraction Layer ────────────────────────────────
@@ -106,6 +108,38 @@ export async function fetchData(table, userId, localKey = null) {
     return localKey ? storage.get(localKey, null) : null
   }
   return data
+}
+
+// ─── user_progress_snapshot: field bersama (progress/streak/grammar/tasks/confusables) ─
+//
+// PENTING: kolom `data` di user_progress_snapshot itu SATU JSONB untuk 5 hal sekaligus:
+// { progress, streak, grammar, tasks, confusables }. Kalau tiap hook upsert cuma
+// ngirim field-nya sendiri tanpa nge-merge field lain, field lain BISA KETIMPA
+// (race condition antar hook). Semua hook yang nulis ke tabel ini WAJIB lewat
+// syncSnapshotField() di bawah, JANGAN upsert manual ke user_progress_snapshot.
+
+/**
+ * Merge satu field baru ke snapshot lokal (progress/streak/grammar/tasks/confusables)
+ * lalu upsert SATU KALI ke Supabase. Membaca sibling fields dari cache localStorage
+ * supaya tidak menimpa field lain yang belum tentu ter-load ulang di memory hook ini.
+ * @param {string} userId
+ * @param {'progress'|'streak'|'grammar'|'tasks'|'confusables'} field
+ * @param {any} value
+ */
+export async function syncSnapshotField(userId, field, value) {
+  if (!userId) return
+  const snapshot = {
+    progress:    field === 'progress'    ? value : storage.get(STORAGE_KEYS.PROGRESS, {}),
+    streak:      field === 'streak'      ? value : storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0, lastDate: null }),
+    grammar:     field === 'grammar'     ? value : storage.get(STORAGE_KEYS.GRAMMAR, {}),
+    tasks:       field === 'tasks'       ? value : storage.get(STORAGE_KEYS.TASKS, {}),
+    confusables: field === 'confusables' ? value : storage.get(STORAGE_KEYS.CONFUSABLES, {}),
+  }
+  await upsertData('user_progress_snapshot', {
+    user_id:    userId,
+    data:       snapshot,
+    updated_at: new Date().toISOString(),
+  })
 }
 
 // ─── Per-tabel loader: baca Supabase → hydrate localStorage ───
@@ -317,6 +351,50 @@ export async function loadGrammar(userId) {
     if (error || !data?.data?.grammar) return fallback
     const parsed = data.data.grammar
     storage.set(STORAGE_KEYS.GRAMMAR, parsed)
+    return parsed
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * Load task progress dari user_progress_snapshot (field data.tasks)
+ * Shape: { level: [id, ...] } — id contoh 'task-1-01'
+ */
+export async function loadTasks(userId) {
+  const fallback = storage.get(STORAGE_KEYS.TASKS, {})
+  if (!userId) return fallback
+  try {
+    const { data, error } = await supabase
+      .from('user_progress_snapshot')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error || !data?.data?.tasks) return fallback
+    const parsed = data.data.tasks
+    storage.set(STORAGE_KEYS.TASKS, parsed)
+    return parsed
+  } catch {
+    return fallback
+  }
+}
+
+/**
+ * Load confusables progress dari user_progress_snapshot (field data.confusables)
+ * Shape: { level: [id, ...] } — id contoh 'cf-01'
+ */
+export async function loadConfusables(userId) {
+  const fallback = storage.get(STORAGE_KEYS.CONFUSABLES, {})
+  if (!userId) return fallback
+  try {
+    const { data, error } = await supabase
+      .from('user_progress_snapshot')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error || !data?.data?.confusables) return fallback
+    const parsed = data.data.confusables
+    storage.set(STORAGE_KEYS.CONFUSABLES, parsed)
     return parsed
   } catch {
     return fallback
