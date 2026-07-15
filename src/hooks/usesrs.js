@@ -65,5 +65,13 @@ export function useSRS(userId = null) {
     })
   }, [])
 
-  return { srsData, reviewWord, getDue, getCardInfo, countDue, resetCard, GRADE, loading }
+  // Re-baca cache SRS dari storage ke state lokal. Perlu dipanggil manual kalau
+  // ada hook LAIN (mis. useProgress().markMastered/reviewSRS) yang menulis ke
+  // STORAGE_KEYS.SRS di luar hook ini — karena setiap instance useSRS() punya
+  // state React sendiri-sendiri dan tidak otomatis tahu ada tulisan dari luar.
+  const refresh = useCallback(() => {
+    setSrsData(storage.get(STORAGE_KEYS.SRS, {}))
+  }, [])
+
+  return { srsData, reviewWord, getDue, getCardInfo, countDue, resetCard, refresh, GRADE, loading }
 }

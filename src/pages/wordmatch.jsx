@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
-import { hskData } from '../data'
+import { hskDataComplete, topicLabelsByLevel } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
 import { useAuthContext } from '../context/authcontext'
 import { shuffle } from '../utils/quizgenerator'
 import { AudioButton } from '../components/ui/audiobutton'
+import { GRADE } from '../utils/srs'
 import { initTTS } from '../utils/tts'
 
 initTTS()
@@ -26,10 +27,11 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 export function WordMatch() {
   const { settings }    = useSettings()
   const { userId } = useAuthContext()
-  const { logActivity } = useProgress(userId)
+  const { markSeen, reviewSRS, logActivity } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
+  const [topicFilter, setTopicFilter] = useState('all')
   const [started,   setStarted]   = useState(false)
   const [round,     setRound]     = useState(null)
   const [selected,  setSelected]  = useState(null)  // { side:'left'|'right', id, idx }
@@ -43,8 +45,15 @@ export function WordMatch() {
   const [finished,  setFinished]  = useState(false)
   const [totalRounds] = useState(3)
 
-  const vocab = hskData[selectedLevel] || []
-  const lvl   = HSK_LEVELS.find(l => l.level === selectedLevel) || HSK_LEVELS[0]
+  const vocabAll = hskDataComplete[selectedLevel] || []
+  const lvl      = HSK_LEVELS.find(l => l.level === selectedLevel) || HSK_LEVELS[0]
+
+  // Label kategori topic untuk level ini — pola sama seperti vocab.jsx
+  const topicLabels = topicLabelsByLevel[selectedLevel] || {}
+  const hasTopics   = Object.keys(topicLabels).length > 0
+  const vocab       = (hasTopics && topicFilter !== 'all')
+    ? vocabAll.filter(v => v.topic === topicFilter)
+    : vocabAll
 
   // Timer
   useEffect(() => {
@@ -52,6 +61,11 @@ export function WordMatch() {
     const t = setInterval(() => setElapsed(e => e + 1), 1000)
     return () => clearInterval(t)
   }, [started, finished])
+
+  function selectLevel(level) {
+    setSelectedLevel(level)
+    setTopicFilter('all')
+  }
 
   function startGame() {
     if (vocab.length < PAIR_COUNT) return
@@ -100,6 +114,10 @@ export function WordMatch() {
       setMatched(prev => new Set([...prev, leftId]))
       setScore(s => s + 1)
       setSelected(null)
+      if (word) {
+        markSeen(word.level || selectedLevel, word.id)
+        reviewSRS(word.id, GRADE.GOOD)
+      }
       logActivity(1, 1)
 
       // Cek apakah ronde selesai
@@ -142,13 +160,36 @@ export function WordMatch() {
         <p className="section-label mb-3">Pilih Level</p>
         <div className="grid grid-cols-5 gap-2 mb-8">
           {HSK_LEVELS.map((l, i) => (
-            <button key={l.level} onClick={() => setSelectedLevel(l.level)}
+            <button key={l.level} onClick={() => selectLevel(l.level)}
               className={`card p-3 text-center transition-all ${selectedLevel === l.level ? 'border-white/25 bg-white/5' : 'hover:border-white/15'}`}>
               <div className="text-xl mb-1">{LEVEL_EMOJIS[i]}</div>
               <div className="text-xs font-bold" style={{ color: l.warnaHex }}>{l.name}</div>
             </button>
           ))}
         </div>
+
+        {/* Topic filter — cuma muncul kalau level ini punya field `topic` di vocabnya */}
+        {hasTopics && (
+          <>
+            <p className="section-label mb-3">Topik</p>
+            <div className="flex gap-1.5 mb-8 flex-wrap">
+              <button onClick={() => setTopicFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  topicFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+                }`}>
+                Semua Topik
+              </button>
+              {Object.entries(topicLabels).map(([key, label]) => (
+                <button key={key} onClick={() => setTopicFilter(key)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                    topicFilter === key ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+                  }`}>
+                  {label.id}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="card p-5 mb-8">
           <h2 className="text-white/60 text-sm font-semibold mb-4">Cara Main</h2>
@@ -164,6 +205,12 @@ export function WordMatch() {
             </div>
           ))}
         </div>
+
+        {vocab.length < PAIR_COUNT && (
+          <p className="text-white/25 text-xs text-center mb-3">
+            Topik ini belum punya cukup kata ({vocab.length}/{PAIR_COUNT}) — coba topik atau level lain
+          </p>
+        )}
 
         <button onClick={startGame} disabled={vocab.length < PAIR_COUNT} className="btn-primary w-full py-3 text-base">
           Mulai Main →

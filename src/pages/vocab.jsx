@@ -8,6 +8,7 @@ import { useBookmark } from '../hooks/usebookmark'
 import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
 import { BookmarkButton } from '../components/ui/bookmarkbutton'
+import { Modal } from '../components/ui/modal'
 import { initTTS } from '../utils/tts'
 
 // Init TTS saat modul di-load
@@ -38,7 +39,7 @@ export function Vocab() {
   const [filter,       setFilter]      = useState('all')
   const [topicFilter,  setTopicFilter] = useState('all')
   const [page,         setPage]        = useState(1)
-  const [expanded,     setExpanded]    = useState(null)
+  const [modalWord,    setModalWord]   = useState(null)
 
   const filtered = useMemo(() => {
     let list = vocab
@@ -52,6 +53,15 @@ export function Vocab() {
     if (filter === 'unseen')    list = list.filter(v => !seenSet.has(v.id))
     if (filter === 'bookmarked')list = list.filter(v => bookmarkSet.has(v.id))
     if (hasTopics && topicFilter !== 'all') list = list.filter(v => v.topic === topicFilter)
+
+    // Urutan default: belum hafal dulu (A-Z pinyin), baru sudah hafal (A-Z pinyin)
+    list = [...list].sort((a, b) => {
+      const aM = masteredSet.has(a.id) ? 1 : 0
+      const bM = masteredSet.has(b.id) ? 1 : 0
+      if (aM !== bM) return aM - bM
+      return (a.pinyin || '').localeCompare(b.pinyin || '', 'id')
+    })
+
     return list
   }, [vocab, search, filter, topicFilter, hasTopics, lvlPrg, bookmarkSet])
 
@@ -71,10 +81,15 @@ export function Vocab() {
 
   function resetPage() { setPage(1); setSearch(''); setFilter('all'); setTopicFilter('all') }
 
+  function openWord(v) {
+    setModalWord(v)
+    markSeen(lvl.level, v.id)
+  }
+
   const pct = Math.min(100, Math.round((masteredSet.size / lvl.totalKata) * 100))
 
   return (
-    <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto animate-fade-in">
+    <div className="min-h-screen px-4 py-8 max-w-6xl mx-auto animate-fade-in">
       <Link to="/" className="btn-ghost mb-6 inline-flex text-sm px-3 py-1.5">← Kembali</Link>
 
       {/* Header */}
@@ -165,23 +180,20 @@ export function Vocab() {
           <p className="font-medium">Tidak ada kata yang cocok</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-8">
           {displayed.map(v => {
-            const isMastered  = masteredSet.has(v.id)
-            const isSeen      = seenSet.has(v.id)
-            const isExpanded  = expanded === v.id
+            const isMastered   = masteredSet.has(v.id)
+            const isSeen       = seenSet.has(v.id)
             const isBookmarked = bookmarkSet.has(v.id)
 
             return (
-              <div key={v.id}
-                className={`vocab-card ${isMastered ? 'mastered' : ''} ${isExpanded ? 'sm:col-span-2' : ''}`}
-              >
-                <div className="p-4 flex items-center gap-3"
-                  onClick={() => { setExpanded(isExpanded ? null : v.id); markSeen(lvl.level, v.id) }}
+              <div key={v.id} className={`vocab-card ${isMastered ? 'mastered' : ''}`}>
+                <div className="p-4 flex items-center gap-3 cursor-pointer"
+                  onClick={() => openWord(v)}
                 >
                   {/* Hanzi */}
-                  <div className="flex-shrink-0 w-12 text-center">
-                    <div className="font-hanzi text-[28px] font-bold leading-none" style={{ color: lvl.warnaHex }}>{v.hanzi}</div>
+                  <div className="flex-shrink-0 min-w-[48px] text-center">
+                    <div className="font-hanzi text-[28px] font-bold leading-none whitespace-nowrap" style={{ color: lvl.warnaHex }}>{v.hanzi}</div>
                     {!isSeen && <div className="text-[8px] text-white/15 uppercase tracking-wider mt-0.5">baru</div>}
                   </div>
 
@@ -207,18 +219,6 @@ export function Vocab() {
                     </button>
                   </div>
                 </div>
-
-                {isExpanded && v.contoh && (
-                  <div className="px-4 pb-4 border-t border-surface-border pt-3">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1">
-                        <p className="font-hanzi text-base text-white/60">{v.contoh}</p>
-                        <p className="text-white/35 text-xs italic mt-1">{v.terjemahan}</p>
-                      </div>
-                      <AudioButton text={v.contoh} size="sm" ghost />
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -233,6 +233,58 @@ export function Vocab() {
           <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="btn-ghost px-4 py-2 text-sm disabled:opacity-25">→</button>
         </div>
       )}
+
+      {/* Popup detail kata */}
+      <Modal open={!!modalWord} onClose={() => setModalWord(null)} size="xl" title={modalWord?.pinyin}>
+        {modalWord && (
+          <div>
+            <div className="flex items-center gap-4 mb-5 flex-wrap">
+              <div className="font-hanzi text-6xl font-bold leading-none" style={{ color: lvl.warnaHex }}>
+                {modalWord.hanzi}
+              </div>
+              <div className="min-w-0">
+                <div className="text-white/50 text-base">{modalWord.pinyin}</div>
+                <div className="text-white/85 text-lg font-medium">{modalWord.arti}</div>
+                {hasTopics && modalWord.topic && topicLabels[modalWord.topic] && (
+                  <div className="text-white/20 text-xs mt-1">{topicLabels[modalWord.topic].id}</div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-5 flex-wrap">
+              <AudioButton text={modalWord.hanzi} size="md" />
+              <BookmarkButton
+                wordId={modalWord.id}
+                isBookmarked={bookmarkSet.has(modalWord.id)}
+                onToggle={toggleBookmark}
+                size="md"
+              />
+              <button
+                onClick={() => toggleMastered(modalWord)}
+                className={`px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
+                  masteredSet.has(modalWord.id)
+                    ? 'bg-green-400/20 text-green-400 border border-green-400/30'
+                    : 'bg-white/5 text-white/50 border border-white/10 hover:text-white hover:border-white/25'
+                }`}>
+                {masteredSet.has(modalWord.id) ? '✓ Sudah Hafal' : '○ Tandai Hafal'}
+              </button>
+            </div>
+
+            {modalWord.contoh && (
+              <div className="border-t border-surface-border pt-4">
+                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Contoh Kalimat</p>
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-hanzi text-xl text-white/80">{modalWord.contoh}</p>
+                    <p className="text-white/40 text-sm italic mt-1">{modalWord.terjemahan}</p>
+                  </div>
+                  <AudioButton text={modalWord.contoh} size="sm" ghost />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

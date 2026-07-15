@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { ProtectedRoute }     from './components/auth/protectedroute'
 import Navbar                 from './components/layout/navbar'
+import Footer                 from './components/layout/footer'
 import { AchievementToast }   from './components/ui/achievementtoast'
 
 import LoginPage      from './pages/login'
@@ -39,6 +40,7 @@ function ProtectedLayout() {
         <main className="sm:pt-[60px] pb-16 sm:pb-0">
           <Outlet />
         </main>
+        <Footer />
         <AchievementToast />
       </>
     </ProtectedRoute>

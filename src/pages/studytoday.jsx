@@ -6,8 +6,8 @@ import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
 import { useBookmark } from '../hooks/usebookmark'
+import { useSRS } from '../hooks/usesrs'
 import { useAuthContext } from '../context/authcontext'
-import { storage, STORAGE_KEYS } from '../utils/storage'
 import { toDateKey } from '../utils/datehelper'
 import { shuffle } from '../utils/quizgenerator'
 import { getDueWords } from '../utils/srs'
@@ -41,9 +41,8 @@ function getUnlockedLevels(progress) {
 }
 
 // ─── Build session pakai SRS ──────────────────────────────────
-function buildDailySession(progress, settings) {
+function buildDailySession(progress, settings, srsData) {
   const target   = settings.dailyTarget || 20
-  const srsData  = storage.get(STORAGE_KEYS.SRS, {})
   const newCount = Math.ceil(target * (1 - REVIEW_RATIO))
   const revCount = Math.floor(target * REVIEW_RATIO)
 
@@ -261,19 +260,20 @@ function SessionResult({ stats, onRestart, streakCount }) {
 // ─── Main Page ────────────────────────────────────────────────
 export function StudyToday() {
   const navigate  = useNavigate()
-  const { settings }  = useSettings()
   const { userId } = useAuthContext()
-  const { progress, markSeen, markMastered, logActivity } = useProgress(userId)
+  const { settings }  = useSettings(userId)
+  const { progress, dailyLog, markSeen, markMastered, logActivity } = useProgress(userId)
   const { streak, recordActivity } = useStreak(userId)
   const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
+  const { srsData } = useSRS(userId)
 
-  const todayLog       = storage.get(STORAGE_KEYS.DAILY_LOG, {})[toDateKey()] || { studied: 0 }
+  const todayLog       = dailyLog[toDateKey()] || { studied: 0 }
   const target         = settings.dailyTarget || 20
   const doneToday      = todayLog.studied >= target
   const unlockedLevels = useMemo(() => getUnlockedLevels(progress), [progress])
   const currentLevel   = unlockedLevels[unlockedLevels.length - 1]
 
-  const [session,    setSession]    = useState(() => buildDailySession(progress, settings))
+  const [session,    setSession]    = useState(() => buildDailySession(progress, settings, srsData))
   const [stepIdx,    setStepIdx]    = useState(0)
   const [started,    setStarted]    = useState(false)
   const [finished,   setFinished]   = useState(false)
@@ -289,7 +289,7 @@ export function StudyToday() {
   , [])
 
   function restart() {
-    const s = buildDailySession(progress, settings)
+    const s = buildDailySession(progress, settings, srsData)
     setSession(s); setStepIdx(0); setStarted(true); setFinished(false)
     setPhase('flash'); setQuizQ(null); setFlashCount(0)
     setStats({ total:0, correct:0, newLearned:0, reviewed:0 })
@@ -399,6 +399,24 @@ export function StudyToday() {
         </div>
 
         <p className="text-white/25 text-xs text-center mb-6">Estimasi ±{Math.ceil(session.length * 0.5)} menit</p>
+
+        {/* Entry point ke fitur latihan lainnya */}
+        <div className="mb-6">
+          <p className="section-label mb-2.5">Latihan Lainnya</p>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label:'Grammar',   icon:'📖', to:'/grammar/1' },
+              { label:'Tugas',     icon:'📝', to:'/tasks' },
+              { label:'Kata Mirip',icon:'🔀', to:'/confusables' },
+              { label:'Kuis',      icon:'✏️', to:'/quiz' },
+            ].map(f => (
+              <Link key={f.label} to={f.to} className="card-hover p-3 text-center">
+                <div className="text-lg mb-1 leading-none">{f.icon}</div>
+                <div className="text-white/60 text-[10px] font-semibold">{f.label}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {session.length === 0 ? (
           <div className="card p-8 text-center text-white/40">

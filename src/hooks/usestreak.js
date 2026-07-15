@@ -13,6 +13,22 @@ function _addXP(amount, userId) {
   }
 }
 
+// Baca sibling fields (grammar/tasks/confusables) dari cache localStorage supaya
+// checkAchievements bisa evaluasi achievement lintas-fitur (grammar_10, tasks_10, dst)
+// walaupun trigger-nya datang dari recordActivity di sini. Juga baca dailyTarget
+// dari settings buat achievement daily_target_7, dan jumlah entri SRS buat
+// achievement first_review.
+function _readOtherFeatureState() {
+  const srs = storage.get(STORAGE_KEYS.SRS, {})
+  return {
+    grammar:        storage.get(STORAGE_KEYS.GRAMMAR, {}),
+    tasks:          storage.get(STORAGE_KEYS.TASKS, {}),
+    confusables:    storage.get(STORAGE_KEYS.CONFUSABLES, {}),
+    dailyTarget:    storage.get(STORAGE_KEYS.SETTINGS, {})?.dailyTarget || 20,
+    srsReviewCount: Object.keys(srs).length,
+  }
+}
+
 export function useStreak(userId = null) {
   const [streak, setStreak] = useState(() =>
     storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0, lastDate: null })
@@ -69,6 +85,7 @@ export function useStreak(userId = null) {
       const achs      = storage.get(STORAGE_KEYS.ACHIEVEMENTS, {})
       const currentIds = new Set(Object.keys(achs))
       const newIds    = checkAchievements({
+        ..._readOtherFeatureState(),
         progress, streak: next, dailyLog, bookmarks,
         quizHistory: quizHist, unlockedIds: currentIds,
       })

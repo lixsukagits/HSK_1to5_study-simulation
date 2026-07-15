@@ -288,6 +288,8 @@ const hsk5Tasks = [
   },
 ];
 
+export { hsk5Tasks };
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { hsk5Tasks };
 }

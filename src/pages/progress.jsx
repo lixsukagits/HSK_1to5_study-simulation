@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
-import { storage, STORAGE_KEYS } from '../utils/storage'
-import { toDateKey, formatDate } from '../utils/datehelper'
-import { useAchievements } from '../hooks/useachievements'
+import { toDateKey } from '../utils/datehelper'
 import { useAuthContext } from '../context/authcontext'
+import { useAchievements } from '../hooks/useachievements'
+import { useProgress } from '../hooks/useprogress'
+import { useStreak } from '../hooks/usestreak'
+import { useGrammar } from '../hooks/usegrammar'
+import { useTasks } from '../hooks/usetasks'
+import { useConfusables } from '../hooks/useconfusables'
+import { HeatmapCalendar } from '../components/progress/heatmapcalendar'
+import { StreakCounter } from '../components/progress/streakcounter'
+import { StatsCard } from '../components/progress/statscard'
 
 // ─── Helpers ─────────────────────────────────────────────────
-function lastNDays(n) {
-  return Array.from({ length: n }, (_, i) => {
-    const d = new Date(); d.setDate(d.getDate() - (n - 1 - i)); return toDateKey(d)
-  })
-}
-
 function getWeekKey(date = new Date()) {
   const d    = new Date(date)
   const day  = d.getDay()
@@ -31,89 +32,6 @@ function buildWeeklyData(dailyLog) {
     if ((val.studied || 0) > 0) weeks[wk].days++
   })
   return weeks
-}
-
-// ─── Heatmap dengan klik detail ──────────────────────────────
-function HeatmapCalendar({ dailyLog }) {
-  const [selectedDay, setSelectedDay] = useState(null)
-  const days  = lastNDays(63)
-  const weeks = []
-  for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7))
-  const max   = Math.max(1, ...Object.values(dailyLog).map(d => d.studied || 0))
-  const today = toDateKey()
-
-  return (
-    <div>
-      <div className="flex gap-1 overflow-x-auto pb-1">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-1">
-            {week.map(day => {
-              const count    = dailyLog[day]?.studied || 0
-              const pct      = count / max
-              const bg       = count === 0 ? 'rgba(255,255,255,0.04)'
-                : pct < 0.25 ? 'rgba(200,13,13,0.35)'
-                : pct < 0.5  ? 'rgba(237,21,21,0.55)'
-                : pct < 0.75 ? 'rgba(237,21,21,0.78)'
-                : '#ed1515'
-              const isSelected = selectedDay === day
-              return (
-                <button
-                  key={day}
-                  title={`${formatDate(day)}: ${count} kata`}
-                  onClick={() => setSelectedDay(isSelected ? null : day)}
-                  className="w-3 h-3 rounded-sm flex-shrink-0 transition-all hover:scale-125 hover:z-10"
-                  style={{
-                    background: bg,
-                    boxShadow: isSelected ? '0 0 0 1.5px #fbbf24' : day === today ? '0 0 0 1.5px rgba(255,255,255,0.3)' : 'none',
-                  }}
-                />
-              )
-            })}
-          </div>
-        ))}
-      </div>
-
-      {/* Detail panel saat hari diklik */}
-      {selectedDay && (
-        <div className="mt-4 p-4 rounded-xl animate-slide-up"
-          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-white/60 text-xs font-semibold mb-1">{formatDate(selectedDay)}</div>
-              <div className="flex gap-4">
-                <span>
-                  <span className="font-display font-bold text-lg text-primary-400">{dailyLog[selectedDay]?.studied || 0}</span>
-                  <span className="text-white/40 text-xs ml-1">kata</span>
-                </span>
-                <span>
-                  <span className="font-display font-bold text-lg text-green-400">{dailyLog[selectedDay]?.correct || 0}</span>
-                  <span className="text-white/40 text-xs ml-1">benar</span>
-                </span>
-                {(dailyLog[selectedDay]?.studied || 0) > 0 && (
-                  <span>
-                    <span className="font-display font-bold text-lg text-blue-400">
-                      {Math.round(((dailyLog[selectedDay]?.correct || 0) / (dailyLog[selectedDay]?.studied || 1)) * 100)}%
-                    </span>
-                    <span className="text-white/40 text-xs ml-1">akurasi</span>
-                  </span>
-                )}
-              </div>
-            </div>
-            <button onClick={() => setSelectedDay(null)} className="text-white/25 hover:text-white/60 text-lg">×</button>
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 mt-3 text-[10px] text-white/25">
-        <span>Kurang</span>
-        {['rgba(255,255,255,0.04)','rgba(200,13,13,0.35)','rgba(237,21,21,0.55)','rgba(237,21,21,0.78)','#ed1515'].map((c,i) => (
-          <div key={i} className="w-3 h-3 rounded-sm" style={{ background:c }} />
-        ))}
-        <span>Banyak</span>
-        <span className="ml-2">· Klik untuk detail</span>
-      </div>
-    </div>
-  )
 }
 
 // ─── Weekly Report ────────────────────────────────────────────
@@ -194,15 +112,16 @@ function WeeklyReport({ dailyLog }) {
 export function Progress() {
   const { userId } = useAuthContext()
   const { unlocked, xp, getRank } = useAchievements(userId)
-  const [tab, setTab] = useState('overview') // 'overview' | 'weekly' | 'heatmap'
+  const { progress, dailyLog, totalMastered } = useProgress(userId)
+  const { streak } = useStreak(userId)
+  const { getCount: getGrammarCount } = useGrammar(userId)
+  const { getCount: getTasksCount } = useTasks(userId)
+  const { getCount: getConfusablesCount } = useConfusables(userId)
+  const [tab, setTab] = useState('overview') // 'overview' | 'heatmap' | 'weekly' | 'lainnya'
 
-  const progress  = storage.get(STORAGE_KEYS.PROGRESS, {})
-  const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0, longestStreak: 0 })
-  const dailyLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})
-  const todayLog  = dailyLog[toDateKey()] || { studied: 0, correct: 0 }
+  const todayLog = dailyLog[toDateKey()] || { studied: 0, correct: 0 }
 
   const totalKata     = HSK_LEVELS.reduce((s, l) => s + l.totalKata, 0)
-  const totalMastered = Object.values(progress).reduce((s, l) => s + (l.mastered?.length || 0), 0)
   const totalSeen     = Object.values(progress).reduce((s, l) => s + (l.seen?.length || 0), 0)
   const overallPct    = Math.min(100, Math.round((totalMastered / totalKata) * 100))
   const activeDays    = Object.values(dailyLog).filter(d => (d.studied || 0) > 0).length
@@ -212,6 +131,10 @@ export function Progress() {
   const rank          = getRank(xp)
   const unlockedCount = Object.keys(unlocked).length
 
+  const totalGrammar     = HSK_LEVELS.reduce((s, l) => s + getGrammarCount(l.level), 0)
+  const totalTasks       = HSK_LEVELS.reduce((s, l) => s + getTasksCount(l.level), 0)
+  const totalConfusables = HSK_LEVELS.reduce((s, l) => s + getConfusablesCount(l.level), 0)
+
   return (
     <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto animate-fade-in">
       <Link to="/" className="btn-ghost mb-6 inline-flex text-sm px-3 py-1.5">← Kembali</Link>
@@ -219,13 +142,7 @@ export function Progress() {
 
       {/* Streak + Rank card */}
       <div className="card p-6 mb-6 flex items-center gap-6 flex-wrap">
-        <div className="flex items-center gap-3">
-          <div className="text-5xl animate-float">🔥</div>
-          <div>
-            <div className="font-display text-5xl font-extrabold text-gold-400 leading-none">{streak.count}</div>
-            <div className="text-white/40 text-sm mt-0.5">Hari streak</div>
-          </div>
-        </div>
+        <StreakCounter count={streak.count} />
         <div className="w-px h-12 bg-surface-border hidden sm:block" />
         {/* Rank */}
         <Link to="/achievements" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -239,20 +156,11 @@ export function Progress() {
           </div>
         </Link>
         <div className="w-px h-12 bg-surface-border hidden sm:block" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 flex-1">
-          {[
-            { label:'Streak terpanjang', value: streak.longestStreak || 0, unit:'hari', color:'text-gold-500' },
-            { label:'Hari aktif',        value: activeDays,                unit:'hari', color:'text-blue-400' },
-            { label:'Kata hari ini',     value: todayLog.studied,          unit:'kata', color:'text-green-400' },
-            { label:'Akurasi',           value: `${accuracy}`,             unit:'%',    color:'text-violet-400' },
-          ].map(s => (
-            <div key={s.label}>
-              <div className={`font-display text-2xl font-extrabold ${s.color}`}>
-                {s.value}<span className="text-sm ml-0.5 font-medium opacity-60">{s.unit}</span>
-              </div>
-              <div className="text-white/30 text-xs mt-0.5">{s.label}</div>
-            </div>
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1">
+          <StatsCard label="Streak terpanjang" value={streak.longestStreak || 0} unit="hari" color="text-gold-500" />
+          <StatsCard label="Hari aktif"        value={activeDays}                unit="hari" color="text-blue-400" />
+          <StatsCard label="Kata hari ini"     value={todayLog.studied}          unit="kata" color="text-green-400" />
+          <StatsCard label="Akurasi"           value={accuracy}                  unit="%"    color="text-violet-400" />
         </div>
       </div>
 
@@ -271,12 +179,39 @@ export function Progress() {
         </div>
       </div>
 
+      {/* Ringkasan fitur lain: grammar / tugas / confusable */}
+      <button
+        type="button"
+        onClick={() => setTab('lainnya')}
+        className="card-hover p-4 mb-6 w-full text-left"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-white/60 text-sm font-medium">Progress Lainnya</span>
+          <span className="text-white/30 text-xs">Lihat detail →</span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center">
+            <div className="font-display text-xl font-extrabold text-blue-400">{totalGrammar}</div>
+            <div className="text-white/30 text-[10px] mt-0.5">Grammar Dipahami</div>
+          </div>
+          <div className="text-center">
+            <div className="font-display text-xl font-extrabold text-green-400">{totalTasks}</div>
+            <div className="text-white/30 text-[10px] mt-0.5">Tugas Dikuasai</div>
+          </div>
+          <div className="text-center">
+            <div className="font-display text-xl font-extrabold text-violet-400">{totalConfusables}</div>
+            <div className="text-white/30 text-[10px] mt-0.5">Confusable Jelas</div>
+          </div>
+        </div>
+      </button>
+
       {/* Tab navigation */}
       <div className="flex gap-1 mb-6 p-1 rounded-xl" style={{ background:'rgba(255,255,255,0.04)' }}>
         {[
           { key:'overview', label:'Per Level' },
           { key:'heatmap',  label:'Aktivitas' },
           { key:'weekly',   label:'Mingguan' },
+          { key:'lainnya',  label:'Lainnya' },
         ].map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
@@ -329,6 +264,44 @@ export function Progress() {
       {tab === 'weekly' && (
         <div>
           <WeeklyReport dailyLog={dailyLog} />
+        </div>
+      )}
+
+      {/* Tab: Lainnya (Grammar / Tugas / Confusable) */}
+      {tab === 'lainnya' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-3 gap-3">
+            <StatsCard label="Grammar Dipahami" value={totalGrammar}     icon="📖" color="text-blue-400" />
+            <StatsCard label="Tugas Dikuasai"   value={totalTasks}       icon="✅" color="text-green-400" />
+            <StatsCard label="Confusable Jelas" value={totalConfusables} icon="🔀" color="text-violet-400" />
+          </div>
+
+          <div>
+            <p className="section-label mb-3">Per Level</p>
+            <div className="space-y-2.5">
+              {HSK_LEVELS.map(lvl => (
+                <div key={lvl.level} className="card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`badge badge-level-${lvl.level} text-xs`}>{lvl.name}</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div>
+                      <div className="font-display text-lg font-bold text-blue-400">{getGrammarCount(lvl.level)}</div>
+                      <div className="text-white/30 text-[10px] mt-0.5">Grammar</div>
+                    </div>
+                    <div>
+                      <div className="font-display text-lg font-bold text-green-400">{getTasksCount(lvl.level)}</div>
+                      <div className="text-white/30 text-[10px] mt-0.5">Tugas</div>
+                    </div>
+                    <div>
+                      <div className="font-display text-lg font-bold text-violet-400">{getConfusablesCount(lvl.level)}</div>
+                      <div className="text-white/30 text-[10px] mt-0.5">Confusable</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

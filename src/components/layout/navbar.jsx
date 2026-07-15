@@ -1,7 +1,9 @@
-import { NavLink, Link } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { storage, STORAGE_KEYS } from '../../utils/storage'
 import { useAchievements } from '../../hooks/useachievements'
 import { useAuthContext } from '../../context/authcontext'
+import Sidebar from './sidebar'
 
 const NAV_ITEMS = [
   { to: '/',           label: 'Beranda',    Icon: HomeIcon     },
@@ -26,12 +28,18 @@ function QuizIcon({ active }) {
 function ProgressIcon({ active }) {
   return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
 }
+function MoreIcon({ active }) {
+  return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active?2.2:1.8} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+}
 
 export default function Navbar() {
   const streak = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
   const { userId } = useAuthContext()
   const { xp, getRank } = useAchievements(userId)
   const rank = getRank(xp)
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const isExtraActive = location.pathname.startsWith('/tasks') || location.pathname.startsWith('/confusables')
 
   return (
     <>
@@ -89,6 +97,18 @@ export default function Navbar() {
                 <span className="text-gold-400 text-sm font-bold">{streak.count}</span>
               </div>
             )}
+
+            {/* More: Tasks & Confusables */}
+            <button
+              onClick={() => setSidebarOpen(o => !o)}
+              title="Menu lainnya"
+              aria-label="Menu lainnya"
+              className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                sidebarOpen || isExtraActive ? 'bg-white/10 text-white' : 'text-white/30 hover:text-white/70 hover:bg-white/5'
+              }`}
+            >
+              <MoreIcon active={sidebarOpen || isExtraActive} />
+            </button>
 
             {/* Bookmark */}
             <NavLink to="/bookmarks"
@@ -165,6 +185,9 @@ export default function Navbar() {
           </NavLink>
         </div>
       </nav>
+
+      {/* Sidebar panel: menu lainnya (desktop only) */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </>
   )
 }

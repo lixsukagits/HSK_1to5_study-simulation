@@ -5,6 +5,7 @@ import { allGrammar } from '../data'
 import { useGrammar } from '../hooks/usegrammar'
 import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
+import { Modal } from '../components/ui/modal'
 import { initTTS } from '../utils/tts'
 
 initTTS()
@@ -20,11 +21,11 @@ export function Grammar() {
 
   const grammarList = allGrammar[lvl.level] || []
 
-  const [search,   setSearch]   = useState('')
-  const [filter,   setFilter]   = useState('all')
-  const [tag,      setTag]      = useState('all')
-  const [page,     setPage]     = useState(1)
-  const [expanded, setExpanded] = useState(null)
+  const [search,       setSearch]       = useState('')
+  const [filter,        setFilter]        = useState('all')
+  const [tag,           setTag]           = useState('all')
+  const [page,          setPage]          = useState(1)
+  const [modalGrammar,  setModalGrammar]  = useState(null)
 
   const allTags = useMemo(() => {
     const tags = new Set()
@@ -62,19 +63,18 @@ export function Grammar() {
   const understoodN = getCount(lvl.level)
   const pct         = grammarList.length === 0 ? 0 : Math.round((understoodN / grammarList.length) * 100)
 
-  function toggleUnderstood(e, g) {
-    e.stopPropagation()
-    if (isUnderstood(lvl.level, g.id)) {
-      unmarkUnderstood(lvl.level, g.id)
+  function toggleUnderstood(id) {
+    if (isUnderstood(lvl.level, id)) {
+      unmarkUnderstood(lvl.level, id)
     } else {
-      markUnderstood(lvl.level, g.id)
+      markUnderstood(lvl.level, id)
     }
   }
 
-  function resetPage() { setPage(1); setSearch(''); setFilter('all'); setTag('all'); setExpanded(null) }
+  function resetPage() { setPage(1); setSearch(''); setFilter('all'); setTag('all'); setModalGrammar(null) }
 
   return (
-    <div className="min-h-screen px-4 py-8 max-w-3xl mx-auto animate-fade-in">
+    <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto animate-fade-in">
       <Link to="/" className="btn-ghost mb-6 inline-flex text-sm px-3 py-1.5">← Kembali</Link>
 
       {/* Header */}
@@ -183,7 +183,6 @@ export function Grammar() {
       ) : (
         <div className="flex flex-col gap-3 mb-8">
           {displayed.map(g => {
-            const isOpen     = expanded === g.id
             const understood = isUnderstood(lvl.level, g.id)
 
             return (
@@ -191,7 +190,7 @@ export function Grammar() {
 
                 {/* Header row */}
                 <div className="p-4 flex items-start gap-3 cursor-pointer select-none"
-                  onClick={() => setExpanded(isOpen ? null : g.id)}>
+                  onClick={() => setModalGrammar(g)}>
 
                   <div className="flex-shrink-0 mt-0.5">
                     <span className="text-[10px] font-mono text-white/25 bg-white/5 px-2 py-0.5 rounded-lg">
@@ -204,14 +203,14 @@ export function Grammar() {
                       <span className="text-white font-semibold text-sm leading-snug">{g.title}</span>
                       <span className="text-white/25 text-xs">{g.titleZh}</span>
                     </div>
-                    <p className={`font-mono text-xs text-primary-400 ${isOpen ? '' : 'truncate'}`}>
+                    <p className="font-mono text-xs text-primary-400 truncate">
                       {g.pattern?.split('\n')[0]}
                     </p>
                   </div>
 
                   {/* Tombol centang kecil di header */}
                   <button
-                    onClick={e => toggleUnderstood(e, g)}
+                    onClick={e => { e.stopPropagation(); toggleUnderstood(g.id) }}
                     title={understood ? 'Batalkan' : 'Sudah paham'}
                     className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all mt-0.5 ${
                       understood
@@ -221,74 +220,6 @@ export function Grammar() {
                     {understood ? '✓' : '○'}
                   </button>
                 </div>
-
-                {/* Expanded content */}
-                {isOpen && (
-                  <div className="border-t border-surface-border px-4 pb-5 pt-4">
-
-                    {/* Pattern */}
-                    <div className="mb-4 p-3 rounded-xl bg-primary-500/5 border border-primary-500/15">
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Pola</p>
-                      {g.pattern?.split('\n').map((line, i) => (
-                        <p key={i} className="font-mono text-sm text-primary-300 leading-relaxed">{line}</p>
-                      ))}
-                    </div>
-
-                    {/* Explanation */}
-                    <div className="mb-4">
-                      <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Penjelasan</p>
-                      <p className="text-white/70 text-sm leading-relaxed">{g.explanation}</p>
-                    </div>
-
-                    {/* Examples */}
-                    {g.examples && g.examples.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-[10px] text-white/30 uppercase tracking-wider mb-3 font-semibold">Contoh Kalimat</p>
-                        <div className="flex flex-col gap-2.5">
-                          {g.examples.map((ex, i) => (
-                            <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-white/3">
-                              <span className="text-white/15 text-xs font-bold mt-0.5 w-4 flex-shrink-0">{i + 1}.</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                                  <span className="font-hanzi text-base text-white/80">{ex.zh}</span>
-                                  <AudioButton text={ex.zh} size="sm" ghost />
-                                </div>
-                                {ex.pinyin && <p className="text-white/35 text-xs mb-1">{ex.pinyin}</p>}
-                                <p className="text-white/50 text-xs italic">{ex.id}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    {g.tags && g.tags.length > 0 && (
-                      <div className="flex gap-1.5 flex-wrap mb-4">
-                        {g.tags.map(t => (
-                          <button key={t} onClick={() => { setTag(t); setPage(1); setExpanded(null) }}
-                            className="text-[10px] text-white/30 bg-white/5 hover:bg-white/10 hover:text-white/60 px-2 py-0.5 rounded-lg transition-all">
-                            #{t}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Tombol sudah paham besar di bawah */}
-                    <button
-                      onClick={e => toggleUnderstood(e, g)}
-                      className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                        understood
-                          ? 'bg-green-400/10 text-green-400 border border-green-400/20 hover:bg-red-400/10 hover:text-red-400 hover:border-red-400/20'
-                          : 'bg-white/5 text-white/40 border border-white/10 hover:bg-green-400/10 hover:text-green-400 hover:border-green-400/20'
-                      }`}>
-                      {understood
-                        ? <><span>✓</span> Sudah Paham — klik untuk batalkan</>
-                        : <><span>○</span> Tandai Sudah Paham</>
-                      }
-                    </button>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -305,6 +236,88 @@ export function Grammar() {
             className="btn-ghost px-4 py-2 text-sm disabled:opacity-25">→</button>
         </div>
       )}
+
+      {/* Popup detail grammar */}
+      <Modal
+        open={!!modalGrammar}
+        onClose={() => setModalGrammar(null)}
+        size="xl"
+        title={modalGrammar?.gfCode}
+      >
+        {modalGrammar && (() => {
+          const understood = isUnderstood(lvl.level, modalGrammar.id)
+          return (
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="text-white font-semibold text-base leading-snug">{modalGrammar.title}</span>
+                <span className="text-white/25 text-sm">{modalGrammar.titleZh}</span>
+              </div>
+
+              {/* Pattern */}
+              <div className="my-4 p-3 rounded-xl bg-primary-500/5 border border-primary-500/15">
+                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Pola</p>
+                {modalGrammar.pattern?.split('\n').map((line, i) => (
+                  <p key={i} className="font-mono text-sm text-primary-300 leading-relaxed">{line}</p>
+                ))}
+              </div>
+
+              {/* Explanation */}
+              <div className="mb-4">
+                <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Penjelasan</p>
+                <p className="text-white/70 text-sm leading-relaxed">{modalGrammar.explanation}</p>
+              </div>
+
+              {/* Examples */}
+              {modalGrammar.examples && modalGrammar.examples.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[10px] text-white/30 uppercase tracking-wider mb-3 font-semibold">Contoh Kalimat</p>
+                  <div className="flex flex-col gap-2.5">
+                    {modalGrammar.examples.map((ex, i) => (
+                      <div key={i} className="flex items-start gap-2 p-3 rounded-xl bg-white/3">
+                        <span className="text-white/15 text-xs font-bold mt-0.5 w-4 flex-shrink-0">{i + 1}.</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                            <span className="font-hanzi text-base text-white/80">{ex.zh}</span>
+                            <AudioButton text={ex.zh} size="sm" ghost />
+                          </div>
+                          {ex.pinyin && <p className="text-white/35 text-xs mb-1">{ex.pinyin}</p>}
+                          <p className="text-white/50 text-xs italic">{ex.id}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {modalGrammar.tags && modalGrammar.tags.length > 0 && (
+                <div className="flex gap-1.5 flex-wrap mb-4">
+                  {modalGrammar.tags.map(t => (
+                    <button key={t} onClick={() => { setTag(t); setPage(1); setModalGrammar(null) }}
+                      className="text-[10px] text-white/30 bg-white/5 hover:bg-white/10 hover:text-white/60 px-2 py-0.5 rounded-lg transition-all">
+                      #{t}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Tombol sudah paham besar di bawah */}
+              <button
+                onClick={() => toggleUnderstood(modalGrammar.id)}
+                className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  understood
+                    ? 'bg-green-400/10 text-green-400 border border-green-400/20 hover:bg-red-400/10 hover:text-red-400 hover:border-red-400/20'
+                    : 'bg-white/5 text-white/40 border border-white/10 hover:bg-green-400/10 hover:text-green-400 hover:border-green-400/20'
+                }`}>
+                {understood
+                  ? <><span>✓</span> Sudah Paham — klik untuk batalkan</>
+                  : <><span>○</span> Tandai Sudah Paham</>
+                }
+              </button>
+            </div>
+          )
+        })()}
+      </Modal>
     </div>
   )
 }

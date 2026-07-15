@@ -1,28 +1,87 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { QUIZ_TYPES, QUIZ_TYPE_LABELS, QUIZ_LENGTHS } from '../constants/quiztypes'
-import { hskData } from '../data'
+import { hskData, topicLabelsByLevel, getConfusablesByLevel } from '../data'
+import { getUsableConfusableGroups, sample, shuffle } from '../utils/quizgenerator'
 import { useQuiz } from '../hooks/usequiz'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
+import { useSRS } from '../hooks/usesrs'
 import { useAuthContext } from '../context/authcontext'
-import { storage, STORAGE_KEYS } from '../utils/storage'
+import { storage, STORAGE_KEYS, upsertData } from '../utils/storage'
 import { AudioButton } from '../components/ui/audiobutton'
-import { XP_REWARDS } from '../utils/achievements'
+import { QuizCard } from '../components/quiz/quizcard'
+import { ConfusableQuiz } from '../components/quiz/confusablequiz'
+import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
 import { initTTS } from '../utils/tts'
 
 initTTS()
 
-function _addXP(amount) {
-  const xp = storage.get(STORAGE_KEYS.XP, { total: 0 })
-  storage.set(STORAGE_KEYS.XP, { ...xp, total: (xp.total || 0) + amount })
+function _addXP(amount, userId) {
+  const xp   = storage.get(STORAGE_KEYS.XP, { total: 0 })
+  const next = { ...xp, total: (xp.total || 0) + amount }
+  storage.set(STORAGE_KEYS.XP, next)
+  if (userId) {
+    upsertData('user_xp', { user_id: userId, total: next.total })
+      .catch(e => console.warn('[xp quiz] sync:', e))
+  }
 }
 
 function _saveQuizHistory(entry) {
   const hist = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
-  storage.set(STORAGE_KEYS.QUIZ_HISTORY, [entry, ...hist].slice(0, 100))
+  const next = [entry, ...hist].slice(0, 100)
+  storage.set(STORAGE_KEYS.QUIZ_HISTORY, next)
+  return next
+}
+
+// Cek & unlock achievement, mirror pola yang sama di useprogress.js/usestreak.js/dst
+function _checkAndUnlock(state, userId) {
+  const current    = storage.get(STORAGE_KEYS.ACHIEVEMENTS, {})
+  const currentIds = new Set(Object.keys(current))
+  const newIds     = checkAchievements({ ...state, unlockedIds: currentIds })
+  if (newIds.length === 0) return
+
+  const now  = Date.now()
+  const next = { ...current }
+  let totalXp = 0
+  const newAchs = []
+
+  for (const id of newIds) {
+    next[id] = { unlockedAt: now }
+    const ach = ACHIEVEMENT_MAP[id]
+    if (ach) { totalXp += ach.xp || 0; newAchs.push(ach) }
+  }
+
+  storage.set(STORAGE_KEYS.ACHIEVEMENTS, next)
+  if (totalXp > 0) _addXP(totalXp, userId)
+
+  if (userId) {
+    const rows = newIds.map(id => ({
+      user_id: userId,
+      achievement_id: id,
+      unlocked_at: new Date(now).toISOString(),
+    }))
+    upsertData('user_achievements', rows, 'user_id,achievement_id').catch(e => console.warn('[ach quiz] sync:', e))
+  }
+
+  window.dispatchEvent(new CustomEvent('hsk:achievement', { detail: newAchs }))
+}
+
+// Susun kataList kuis: kata yang "due" untuk SRS ditaruh duluan (dijamin
+// kepakai selama cukup slot), sisanya diisi random dari sisa vocab supaya
+// tetap genap sejumlah `count`. Kalau tidak ada kata due sama sekali, atau
+// prioritas SRS dimatikan, ya balik ke seluruh vocab biasa (random polos).
+function buildPrioritizedKataList(vocab, dueWords, count) {
+  if (!dueWords || dueWords.length === 0) return vocab
+  const priorityCount = Math.min(dueWords.length, count)
+  const prioritySelected = sample(dueWords, priorityCount)
+  const dueIds = new Set(prioritySelected.map((w) => w.id))
+  const rest = vocab.filter((w) => !dueIds.has(w.id))
+  const remainingCount = Math.max(count - prioritySelected.length, 0)
+  const fillSelected = sample(rest, Math.min(remainingCount, rest.length))
+  return shuffle([...prioritySelected, ...fillSelected])
 }
 
 const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
@@ -30,42 +89,126 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 export function Quiz() {
   const { settings }   = useSettings()
   const { userId } = useAuthContext()
-  const { logActivity } = useProgress(userId)
+  const { logActivity, reviewSRS } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
+  const { getDue, GRADE } = useSRS(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
   const [selectedType,  setSelectedType]  = useState(settings.quizType || QUIZ_TYPES.HANZI_TO_INDO)
+  const [selectedTopic, setSelectedTopic] = useState('all')
   const [selectedCount, setSelectedCount] = useState(settings.quizSize || 20)
+  const [prioritizeSRS, setPrioritizeSRS] = useState(false)
   const [answered,      setAnswered]      = useState(null)
 
   const vocab = hskData[selectedLevel] || []
   const lvl   = HSK_LEVELS.find(l => l.level === selectedLevel) || HSK_LEVELS[0]
 
+  // Topik tersedia untuk level ini (kosong kalau levelnya belum punya field `topic`)
+  const topicLabels  = topicLabelsByLevel[selectedLevel] || {}
+  const hasTopics     = Object.keys(topicLabels).length > 0
+
+  // Kata yang jadi SUMBER SOAL: difilter topik kalau ada filter aktif.
+  // Distraktor tetap diambil dari seluruh `vocab` level ini (pool) supaya tetap variatif.
+  const topicFilteredVocab = (hasTopics && selectedTopic !== 'all')
+    ? vocab.filter(w => w.topic === selectedTopic)
+    : vocab
+
+  // Grup Kata Ketuker untuk level ini
+  const confusableGroups       = getConfusablesByLevel(selectedLevel)
+  const usableConfusableGroups = getUsableConfusableGroups(confusableGroups)
+
+  const isConfusable = selectedType === QUIZ_TYPES.CONFUSABLE
+
+  // Kata yang due untuk direview (SRS) dalam cakupan topik yang aktif —
+  // hanya relevan untuk tipe soal MC biasa, bukan Kata Ketuker.
+  const dueWords = (!isConfusable && prioritizeSRS) ? getDue(topicFilteredVocab) : []
+
+  // kataList final yang dipakai untuk generate soal (sumber soal, BUKAN sumber distraktor)
+  const filteredVocab = (!isConfusable && prioritizeSRS)
+    ? buildPrioritizedKataList(topicFilteredVocab, dueWords, selectedCount)
+    : topicFilteredVocab
+
+  // Reset topik kalau ganti level (kategori topic beda per level)
+  useEffect(() => {
+    setSelectedTopic('all')
+  }, [selectedLevel])
+
+  // Kalau pindah ke level yang confusable-nya belum ada, jangan biarkan
+  // tipe soal "Kata Ketuker" masih terpilih tanpa data
+  useEffect(() => {
+    if (selectedType === QUIZ_TYPES.CONFUSABLE && usableConfusableGroups.length === 0) {
+      setSelectedType(QUIZ_TYPES.HANZI_TO_INDO)
+    }
+  }, [selectedLevel]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const { started, finished, currentQuestion, total, score, current, answers, start, answer, reset } =
-    useQuiz(vocab, selectedType, selectedCount)
+    useQuiz({
+      vocab: filteredVocab,
+      pool: vocab,
+      groups: confusableGroups,
+      type: selectedType,
+      count: selectedCount,
+    })
+
+  const canStart = isConfusable
+    ? usableConfusableGroups.length >= 1
+    : filteredVocab.length >= 1 && vocab.length >= 4
+
+  // Guard supaya history/XP/achievement cuma disimpan SEKALI per sesi kuis yang
+  // selesai. Direset manual tiap kali kuis (di)mulai — bukan lewat effect [started]
+  // karena 'started' tetap true saat "Ulangi" (cuma start() dipanggil ulang),
+  // jadi effect ber-dependency [started] gak akan re-fire di kasus itu.
+  const savedRef = useRef(false)
+
+  function beginQuiz() {
+    savedRef.current = false
+    start()
+  }
+
+  // Otomatis simpan hasil kuis + cek achievement begitu kuis selesai — TIDAK
+  // menunggu user klik "Ulangi"/"Ganti Pengaturan" lagi (bug lama: kalau user
+  // klik "Beranda" atau nutup tab abis kuis kelar, hasilnya dulu gak pernah
+  // kesimpen sama sekali).
+  useEffect(() => {
+    if (!finished || savedRef.current || total === 0) return
+    savedRef.current = true
+
+    const pct = Math.round((score / total) * 100)
+    if (pct === 100) _addXP(XP_REWARDS.QUIZ_PERFECT, userId)
+
+    const newHistory = _saveQuizHistory({ score, total, type: selectedType, level: selectedLevel, pct, date: Date.now() })
+
+    const progress       = storage.get(STORAGE_KEYS.PROGRESS, {})
+    const streak          = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
+    const dailyLog        = storage.get(STORAGE_KEYS.DAILY_LOG, {})
+    const bookmarks       = storage.get(STORAGE_KEYS.BOOKMARKS, [])
+    const grammar         = storage.get(STORAGE_KEYS.GRAMMAR, {})
+    const tasks           = storage.get(STORAGE_KEYS.TASKS, {})
+    const confusables      = storage.get(STORAGE_KEYS.CONFUSABLES, {})
+    const dailyTarget     = storage.get(STORAGE_KEYS.SETTINGS, {})?.dailyTarget || 20
+    const srsReviewCount  = Object.keys(storage.get(STORAGE_KEYS.SRS, {})).length
+    _checkAndUnlock({ progress, streak, dailyLog, bookmarks, quizHistory: newHistory, grammar, tasks, confusables, dailyTarget, srsReviewCount }, userId)
+  }, [finished]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleStart() {
-    start()
+    beginQuiz()
   }
 
   function handleAnswer(selected) {
     if (answered !== null) return
     setAnswered({ selected })
     const correct = selected === currentQuestion.jawaban
+    // ID kata untuk update kartu SRS — soal MC biasa punya `kata.id`,
+    // soal Kata Ketuker punya `vocabId` (bisa null kalau item confusable-nya
+    // tidak terhubung ke satu entri vocab spesifik, mis. gabungan beberapa kata).
+    const wordId = currentQuestion.kata?.id || currentQuestion.vocabId || null
     setTimeout(() => {
       answer(selected)
       setAnswered(null)
       logActivity(1, correct ? 1 : 0)
       if (correct) recordActivity()
+      if (wordId) reviewSRS(wordId, correct ? GRADE.GOOD : GRADE.WRONG)
     }, 900)
-  }
-
-  function handleFinished() {
-    const pct = Math.round((score / total) * 100)
-    // Bonus XP untuk kuis sempurna
-    if (pct === 100 && total > 0) _addXP(XP_REWARDS.QUIZ_PERFECT)
-    // Simpan ke quiz history
-    _saveQuizHistory({ score, total, type: selectedType, level: selectedLevel, pct, date: Date.now() })
   }
 
   // ── Setup ──
@@ -87,16 +230,68 @@ export function Quiz() {
           ))}
         </div>
 
+        {hasTopics && (
+          <div className="mb-7">
+            <p className="section-label mb-3">Topik (opsional)</p>
+            <select
+              className="input w-full"
+              value={selectedTopic}
+              onChange={(e) => setSelectedTopic(e.target.value)}
+            >
+              <option value="all">Semua Topik</option>
+              {Object.entries(topicLabels).map(([key, label]) => (
+                <option key={key} value={key}>{label.id}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <p className="section-label mb-3">Tipe Soal</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-7">
-          {Object.entries(QUIZ_TYPE_LABELS).map(([key, label]) => (
-            <button key={key} onClick={() => setSelectedType(key)}
-              className={`card p-3.5 text-left text-sm flex items-center gap-3 transition-all duration-200 ${selectedType === key ? 'border-primary-600/50 bg-primary-600/8' : 'hover:border-white/15'}`}>
-              <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${selectedType === key ? 'border-primary-500 bg-primary-500' : 'border-white/20'}`} />
-              <span className="text-white/70">{label}</span>
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
+          {Object.entries(QUIZ_TYPE_LABELS).map(([key, label]) => {
+            const isConfusableTile = key === QUIZ_TYPES.CONFUSABLE
+            const tileDisabled = isConfusableTile && usableConfusableGroups.length === 0
+            return (
+              <button
+                key={key}
+                onClick={() => !tileDisabled && setSelectedType(key)}
+                disabled={tileDisabled}
+                className={`card p-3.5 text-left text-sm flex items-center gap-3 transition-all duration-200 ${
+                  tileDisabled ? 'opacity-30 cursor-not-allowed' :
+                  selectedType === key ? 'border-primary-600/50 bg-primary-600/8' : 'hover:border-white/15'
+                }`}
+              >
+                <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${selectedType === key ? 'border-primary-500 bg-primary-500' : 'border-white/20'}`} />
+                <span className="text-white/70">
+                  {label}
+                  {tileDisabled && <span className="text-white/25 text-xs ml-1.5">(belum tersedia)</span>}
+                </span>
+              </button>
+            )
+          })}
         </div>
+
+        {!isConfusable && (
+          <div className="mb-7">
+            <label className={`card p-3.5 flex items-center gap-3 text-sm transition-all duration-200 ${topicFilteredVocab.length === 0 ? 'opacity-40' : 'cursor-pointer hover:border-white/15'}`}>
+              <input
+                type="checkbox"
+                checked={prioritizeSRS}
+                onChange={(e) => setPrioritizeSRS(e.target.checked)}
+                className="w-4 h-4 accent-primary-600 flex-shrink-0"
+              />
+              <span className="text-white/70 flex-1">
+                Prioritaskan kata yang perlu direview
+                <span className="text-white/30 text-xs block mt-0.5">Berdasarkan jadwal Spaced Repetition (SRS)</span>
+              </span>
+              {prioritizeSRS && (
+                <span className="badge badge-level-1 flex-shrink-0">
+                  {dueWords.length} due
+                </span>
+              )}
+            </label>
+          </div>
+        )}
 
         <p className="section-label mb-3">Jumlah Soal</p>
         <div className="flex gap-2 mb-8">
@@ -108,7 +303,7 @@ export function Quiz() {
           ))}
         </div>
 
-        <button onClick={handleStart} disabled={vocab.length < 4} className="btn-primary w-full py-3 text-base">
+        <button onClick={handleStart} disabled={!canStart} className="btn-primary w-full py-3 text-base">
           Mulai Kuis →
         </button>
       </div>
@@ -117,7 +312,6 @@ export function Quiz() {
 
   // ── Results ──
   if (finished) {
-    // Save on first render of results
     const pct   = Math.round((score / total) * 100)
     const grade = pct >= 90 ? '🏆' : pct >= 70 ? '🎯' : pct >= 50 ? '📖' : '💪'
     const msg   = pct >= 90 ? 'Luar Biasa!' : pct >= 70 ? 'Bagus Sekali!' : pct >= 50 ? 'Terus Semangat!' : 'Ayo Latihan Lagi!'
@@ -142,21 +336,33 @@ export function Quiz() {
         <div className="mb-6">
           <p className="section-label mb-3">Review Jawaban</p>
           <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-            {answers.map((a, i) => (
-              <div key={i} className={`card p-3 flex items-center gap-3 text-sm ${a.correct ? 'border-green-400/20 bg-green-400/5' : 'border-red-400/20 bg-red-400/5'}`}>
-                <span className={`text-sm font-bold ${a.correct ? 'text-green-400' : 'text-red-400'}`}>{a.correct ? '✓' : '✗'}</span>
-                <span className="font-hanzi text-xl text-white/80">{a.question.kata?.hanzi}</span>
-                <span className="text-white/35 flex-1 truncate text-xs">{a.question.kata?.arti}</span>
-                <AudioButton text={a.question.kata?.hanzi || ''} size="sm" ghost />
-                {!a.correct && <span className="text-red-400/50 text-xs truncate max-w-20">{a.selectedJawaban}</span>}
-              </div>
-            ))}
+            {answers.map((a, i) => {
+              const isConfusableAnswer = a.question.type === QUIZ_TYPES.CONFUSABLE
+              return (
+                <div key={i} className={`card p-3 flex items-center gap-3 text-sm ${a.correct ? 'border-green-400/20 bg-green-400/5' : 'border-red-400/20 bg-red-400/5'}`}>
+                  <span className={`text-sm font-bold ${a.correct ? 'text-green-400' : 'text-red-400'}`}>{a.correct ? '✓' : '✗'}</span>
+                  {isConfusableAnswer ? (
+                    <>
+                      <span className="font-hanzi text-xl text-white/80">{a.question.jawaban}</span>
+                      <span className="text-white/35 flex-1 truncate text-xs">{a.question.groupTitle}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-hanzi text-xl text-white/80">{a.question.kata?.hanzi}</span>
+                      <span className="text-white/35 flex-1 truncate text-xs">{a.question.kata?.arti}</span>
+                      <AudioButton text={a.question.kata?.hanzi || ''} size="sm" ghost />
+                    </>
+                  )}
+                  {!a.correct && <span className="text-red-400/50 text-xs truncate max-w-20">{a.selectedJawaban}</span>}
+                </div>
+              )
+            })}
           </div>
         </div>
 
         <div className="flex gap-3 flex-wrap justify-center">
-          <button onClick={() => { handleFinished(); start() }} className="btn-primary">🔄 Ulangi</button>
-          <button onClick={() => { handleFinished(); reset() }} className="btn-ghost">Ganti Pengaturan</button>
+          <button onClick={() => beginQuiz()} className="btn-primary">🔄 Ulangi</button>
+          <button onClick={() => reset()} className="btn-ghost">Ganti Pengaturan</button>
           <Link to="/" className="btn-ghost">Beranda</Link>
         </div>
       </div>
@@ -182,48 +388,17 @@ export function Quiz() {
           style={{ width:`${(current/total)*100}%`, background:'linear-gradient(90deg,#ed1515,#f59e0b)' }} />
       </div>
 
-      {/* Question */}
-      <div className="card p-8 text-center mb-5 relative">
-        <div className="absolute top-4 right-4">
-          <AudioButton text={q.soal.nilai} size="md" />
-        </div>
-        <p className="section-label mb-5">{QUIZ_TYPE_LABELS[selectedType]}</p>
-        {q.soal.tipe === 'hanzi' ? (
-          <div>
-            <div className="font-hanzi font-bold leading-none mb-3"
-              style={{ fontSize:'clamp(56px,12vw,88px)', color: lvl.warnaHex }}>
-              {q.soal.nilai}
-            </div>
-            {q.soal.pinyin && answered !== null && (
-              <div className="text-white/35 text-base">{q.soal.pinyin}</div>
-            )}
-          </div>
-        ) : (
-          <div className="text-white text-2xl font-semibold">{q.soal.nilai}</div>
-        )}
-      </div>
-
-      {/* Options */}
-      <div className="grid grid-cols-1 gap-2.5">
-        {q.pilihan.map((pil, i) => {
-          let state = 'idle'
-          if (answered) {
-            if (pil === q.jawaban) state = 'correct'
-            else if (pil === answered.selected) state = 'wrong'
-          }
-          return (
-            <button key={i} onClick={() => state === 'idle' && handleAnswer(pil)}
-              className={`quiz-option ${state === 'correct' ? 'correct' : ''} ${state === 'wrong' ? 'wrong' : ''} ${answered !== null ? 'answered' : ''}`}>
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/5 text-white/25 text-xs font-bold mr-3 flex-shrink-0">
-                {String.fromCharCode(65+i)}
-              </span>
-              <span className={q.soal.tipe !== 'hanzi' && (selectedType === 'indo_to_hanzi' || selectedType === 'pinyin_to_hanzi') ? 'font-hanzi text-xl' : ''}>
-                {pil}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+      {isConfusable ? (
+        <ConfusableQuiz question={q} onAnswer={handleAnswer} answered={answered} />
+      ) : (
+        <QuizCard
+          question={q}
+          onAnswer={handleAnswer}
+          answered={answered}
+          typeLabel={QUIZ_TYPE_LABELS[selectedType]}
+          levelColor={lvl.warnaHex}
+        />
+      )}
     </div>
   )
 }

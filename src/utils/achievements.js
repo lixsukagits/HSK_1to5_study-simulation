@@ -3,6 +3,8 @@
  * Setiap achievement punya: id, nama, deskripsi, icon, condition checker
  */
 
+import { toDateKey } from "./datehelper";
+
 export const ACHIEVEMENTS = [
   // ── Streak ──────────────────────────────────────────────────
   { id: 'streak_3',    icon: '🔥', name: '3 Hari Berturut',    desc: 'Belajar 3 hari berturut-turut',   xp: 50  },
@@ -41,18 +43,49 @@ export const ACHIEVEMENTS = [
   // ── Khusus ───────────────────────────────────────────────────
   { id: 'first_review',   icon: '🔄', name: 'Review Pertama',       desc: 'Review kata dengan SRS pertama kali', xp: 20 },
   { id: 'speed_learner',  icon: '⚡', name: 'Belajar Cepat',        desc: 'Pelajari 50 kata dalam satu hari', xp: 200 },
+
+  // ── Fitur lain: Grammar / Tugas / Confusable ──────────────────
+  { id: 'grammar_10',     icon: '📖', name: 'Paham Tata Bahasa',    desc: 'Pahami 10 poin grammar',              xp: 30 },
+  { id: 'tasks_10',       icon: '✅', name: 'Penuntas Tugas',       desc: 'Kuasai 10 tugas (任务大纲)',           xp: 30 },
+  { id: 'confusables_10', icon: '🔀', name: 'Anti Ketuker',         desc: 'Pahami 10 grup kata gampang ketuker', xp: 30 },
 ]
 
 /** Map id → achievement untuk lookup cepat */
 export const ACHIEVEMENT_MAP = Object.fromEntries(ACHIEVEMENTS.map(a => [a.id, a]))
 
 /**
+ * Hitung berapa hari berturut-turut (mundur dari hari ini) user mencapai
+ * target belajar harian (settings.dailyTarget). Berhenti begitu ketemu hari
+ * yang studied-nya di bawah target.
+ * @param {object} dailyLog - { 'YYYY-MM-DD': { studied, correct } }
+ * @param {number} target
+ */
+function countConsecutiveTargetDays(dailyLog, target) {
+  if (!target || target <= 0) return 0
+  let count = 0
+  const d = new Date()
+  while (true) {
+    const key = toDateKey(d)
+    const studied = dailyLog[key]?.studied || 0
+    if (studied < target) break
+    count++
+    d.setDate(d.getDate() - 1)
+  }
+  return count
+}
+
+/**
  * Cek achievement mana yang baru di-unlock
- * @param {object} state - { progress, streak, dailyLog, bookmarks, quizHistory, unlockedIds }
+ * @param {object} state - { progress, streak, dailyLog, bookmarks, quizHistory, grammar, tasks, confusables, dailyTarget, unlockedIds }
  * @returns {string[]} - array achievement id yang baru unlock
  */
 export function checkAchievements(state) {
-  const { progress, streak, dailyLog, bookmarks = [], quizHistory = [], unlockedIds = new Set() } = state
+  const {
+    progress, streak, dailyLog, bookmarks = [], quizHistory = [],
+    grammar = {}, tasks = {}, confusables = {},
+    dailyTarget = 20, srsReviewCount = 0,
+    unlockedIds = new Set(),
+  } = state
 
   const totalMastered = Object.values(progress).reduce((s, l) => s + (l.mastered?.length || 0), 0)
   const newUnlocks = []
@@ -92,6 +125,7 @@ export function checkAchievements(state) {
   // Belajar harian
   const activeDays = Object.values(dailyLog).filter(d => (d.studied || 0) > 0).length
   check('daily_first', activeDays >= 1)
+  check('daily_target_7', countConsecutiveTargetDays(dailyLog, dailyTarget) >= 7)
 
   // Bookmark
   check('bookmark_10', bookmarks.length >= 10)
@@ -99,6 +133,18 @@ export function checkAchievements(state) {
   // Speed learner
   const todayKey = new Date().toISOString().slice(0, 10)
   check('speed_learner', (dailyLog[todayKey]?.studied || 0) >= 50)
+
+  // Fitur lain: grammar / tugas / confusable (jumlah dikumpulkan lintas semua level)
+  const totalGrammar     = Object.values(grammar).reduce((s, arr) => s + (arr?.length || 0), 0)
+  const totalTasks       = Object.values(tasks).reduce((s, arr) => s + (arr?.length || 0), 0)
+  const totalConfusables = Object.values(confusables).reduce((s, arr) => s + (arr?.length || 0), 0)
+
+  check('grammar_10',     totalGrammar >= 10)
+  check('tasks_10',       totalTasks >= 10)
+  check('confusables_10', totalConfusables >= 10)
+
+  // Khusus
+  check('first_review', srsReviewCount >= 1)
 
   return newUnlocks
 }

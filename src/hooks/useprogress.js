@@ -16,10 +16,26 @@ function _addXP(amount, userId) {
   return next
 }
 
+// Baca sibling fields (grammar/tasks/confusables) dari cache localStorage supaya
+// checkAchievements bisa evaluasi achievement lintas-fitur (grammar_10, tasks_10, dst)
+// walaupun trigger-nya datang dari markMastered/logActivity di sini. Juga baca
+// dailyTarget dari settings buat achievement daily_target_7, dan jumlah entri SRS
+// buat achievement first_review.
+function _readOtherFeatureState() {
+  const srs = storage.get(STORAGE_KEYS.SRS, {})
+  return {
+    grammar:        storage.get(STORAGE_KEYS.GRAMMAR, {}),
+    tasks:          storage.get(STORAGE_KEYS.TASKS, {}),
+    confusables:    storage.get(STORAGE_KEYS.CONFUSABLES, {}),
+    dailyTarget:    storage.get(STORAGE_KEYS.SETTINGS, {})?.dailyTarget || 20,
+    srsReviewCount: Object.keys(srs).length,
+  }
+}
+
 function _checkAndUnlock(state, userId) {
   const current    = storage.get(STORAGE_KEYS.ACHIEVEMENTS, {})
   const currentIds = new Set(Object.keys(current))
-  const newIds     = checkAchievements({ ...state, unlockedIds: currentIds })
+  const newIds     = checkAchievements({ ..._readOtherFeatureState(), ...state, unlockedIds: currentIds })
   if (newIds.length === 0) return []
 
   const now = Date.now()
@@ -42,7 +58,7 @@ function _checkAndUnlock(state, userId) {
       achievement_id: id,
       unlocked_at: new Date(now).toISOString(),
     }))
-    upsertData('user_achievements', rows).catch(e => console.warn('[ach] sync:', e))
+    upsertData('user_achievements', rows, 'user_id,achievement_id').catch(e => console.warn('[ach] sync:', e))
   }
 
   window.dispatchEvent(new CustomEvent('hsk:achievement', { detail: newAchs }))
@@ -60,8 +76,12 @@ function _updateSRS(wordId, grade, userId) {
     upsertData('user_srs', {
       user_id: userId, word_id: wordId,
       interval: next.interval, ease_factor: next.easeFactor,
-      next_review: next.nextReview, reps: next.reps,
-    }).catch(e => console.warn('[srs] sync:', e))
+      // next.nextReview dari sm2() adalah timestamp ms mentah (Date.now()-based).
+      // Kolom next_review di Supabase bertipe timestamp, jadi WAJIB dikonversi ke
+      // ISO string dulu — kalau dikirim angka mentah, PostgREST membacanya sebagai
+      // detik-sejak-epoch (bukan ms) dan meledak "date/time field value out of range".
+      next_review: new Date(next.nextReview).toISOString(), reps: next.reps,
+    }, 'user_id,word_id').catch(e => console.warn('[srs] sync:', e))
   }
 }
 
@@ -167,7 +187,7 @@ export function useProgress(userId = null) {
         activity_date: key,
         words_studied: newLog[key].studied,
         quiz_score:    newLog[key].correct,
-      }).catch(e => console.warn('[activity] sync:', e))
+      }, 'user_id,activity_date').catch(e => console.warn('[activity] sync:', e))
     }
 
     const prog      = storage.get(STORAGE_KEYS.PROGRESS, {})
@@ -180,6 +200,13 @@ export function useProgress(userId = null) {
   const reviewSRS = useCallback((wordId, grade) => {
     _updateSRS(wordId, grade, userId)
     _addXP(grade >= 3 ? XP_REWARDS.QUIZ_CORRECT : 1, userId)
+
+    const prog      = storage.get(STORAGE_KEYS.PROGRESS, {})
+    const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
+    const log       = storage.get(STORAGE_KEYS.DAILY_LOG, {})
+    const bookmarks = storage.get(STORAGE_KEYS.BOOKMARKS, [])
+    const quizHist  = storage.get(STORAGE_KEYS.QUIZ_HISTORY, [])
+    _checkAndUnlock({ progress: prog, streak, dailyLog: log, bookmarks, quizHistory: quizHist }, userId)
   }, [userId])
 
   const getLevelProgress = useCallback(

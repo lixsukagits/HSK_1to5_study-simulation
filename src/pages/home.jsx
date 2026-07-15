@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { hskData } from '../data'
-import { storage, STORAGE_KEYS } from '../utils/storage'
 import { daysUntil, TARGET_DATE, toDateKey } from '../utils/datehelper'
 import { getDueWords } from '../utils/srs'
+import { useAuthContext } from '../context/authcontext'
+import { useProgress } from '../hooks/useprogress'
+import { useStreak } from '../hooks/usestreak'
+import { useAchievements } from '../hooks/useachievements'
+import { useSettings } from '../hooks/usesettings'
+import { useSRS } from '../hooks/usesrs'
 
-function getStudyTodayPreview(progress, settings) {
+function getStudyTodayPreview(progress, dailyLog, settings, srsData) {
   const target    = settings.dailyTarget || 20
-  const todayLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})[toDateKey()] || { studied: 0 }
-  const srsData   = storage.get(STORAGE_KEYS.SRS, {})
+  const todayLog  = dailyLog[toDateKey()] || { studied: 0 }
   const doneToday = todayLog.studied >= target
   let newCount = 0, revCount = 0
 
@@ -32,18 +36,20 @@ function getStudyTodayPreview(progress, settings) {
 }
 
 export default function Home() {
-  const progress  = storage.get(STORAGE_KEYS.PROGRESS, {})
-  const streak    = storage.get(STORAGE_KEYS.STREAK, { count: 0 })
-  const dailyLog  = storage.get(STORAGE_KEYS.DAILY_LOG, {})
-  const settings  = storage.get(STORAGE_KEYS.SETTINGS, { dailyTarget: 20 })
-  const xpData    = storage.get(STORAGE_KEYS.XP, { total: 0 })
+  const { userId } = useAuthContext()
+  const { progress, dailyLog } = useProgress(userId)
+  const { streak }             = useStreak(userId)
+  const { xp }                 = useAchievements(userId)
+  const { settings }           = useSettings(userId)
+  const { srsData }            = useSRS(userId)
+
   const todayLog  = dailyLog[toDateKey()] || { studied: 0 }
   const daysLeft  = daysUntil(TARGET_DATE)
 
   const totalMastered = Object.values(progress).reduce((s, l) => s + (l.mastered?.length || 0), 0)
   const totalKata     = HSK_LEVELS.reduce((s, l) => s + l.totalKata, 0)
   const overallPct    = Math.min(100, Math.round((totalMastered / totalKata) * 100))
-  const study         = getStudyTodayPreview(progress, settings)
+  const study         = getStudyTodayPreview(progress, dailyLog, settings, srsData)
   const target        = settings.dailyTarget || 20
   const todayPct      = Math.min(100, Math.round((todayLog.studied / target) * 100))
 
@@ -118,7 +124,7 @@ export default function Home() {
         {[
           { label:'Streak',     value: streak.count,     unit:'hari', color:'#fbbf24', icon:'🔥' },
           { label:'Dikuasai',   value: totalMastered,    unit:'kata', color:'#4ade80', icon:'✓'  },
-          { label:'XP Total',   value: xpData.total.toLocaleString(), unit:'xp', color:'#a78bfa', icon:'⚡' },
+          { label:'XP Total',   value: xp.toLocaleString(), unit:'xp', color:'#a78bfa', icon:'⚡' },
           { label:'Sisa target',value: daysLeft,         unit:'hari', color:'#60a5fa', icon:'⏳' },
         ].map(s => (
           <div key={s.label} className="card p-4 text-center">
@@ -181,6 +187,9 @@ export default function Home() {
         {[
           { label:'Flash Card',      icon:'🃏', to:'/flashcards',  color:'rgba(237,21,21,0.08)',  border:'rgba(237,21,21,0.15)'  },
           { label:'Kuis',            icon:'✏️', to:'/quiz',        color:'rgba(96,165,250,0.08)', border:'rgba(96,165,250,0.15)' },
+          { label:'Grammar',         icon:'📖', to:'/grammar/1',   color:'rgba(52,211,153,0.08)', border:'rgba(52,211,153,0.15)' },
+          { label:'Latihan Tugas',   icon:'📝', to:'/tasks',       color:'rgba(129,140,248,0.08)',border:'rgba(129,140,248,0.15)'},
+          { label:'Kata Mirip',      icon:'🔀', to:'/confusables', color:'rgba(251,146,60,0.08)', border:'rgba(251,146,60,0.15)' },
           { label:'Word Match',      icon:'🎮', to:'/wordmatch',   color:'rgba(74,222,128,0.08)', border:'rgba(74,222,128,0.15)' },
           { label:'Latihan Tulis',   icon:'🔤', to:'/writing',     color:'rgba(245,158,11,0.08)', border:'rgba(245,158,11,0.15)' },
           { label:'Urutan Goresan',  icon:'🖌️', to:'/strokeorder', color:'rgba(167,139,250,0.08)',border:'rgba(167,139,250,0.15)'},

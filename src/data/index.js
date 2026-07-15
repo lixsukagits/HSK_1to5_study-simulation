@@ -26,16 +26,31 @@ import { hsk1Tasks } from './hsk1tasks.js'
 import { hsk1Confusables } from './hsk1confusables.js'
 
 import { hsk2 } from './hsk2.js'
+import { hsk2TopicLabels } from './hsk2.js'
 import { hsk2Grammar } from './hsk2grammar.js'
+import { hsk2Topics } from './hsk2topics.js'
+import { hsk2Tasks } from './hsk2tasks.js'
+import { hsk2Confusables } from './hsk2confusables.js'
 
 import { hsk3 } from './hsk3.js'
+import { hsk3TopicLabels } from './hsk3.js'
 import { hsk3Grammar } from './hsk3grammar.js'
+import { hsk3Topics } from './hsk3topics.js'
+import { hsk3Tasks } from './hsk3tasks.js'
+import { hsk3Confusables } from './hsk3confusables.js'
 
 import { hsk4 } from './hsk4.js'
+import { hsk4TopicLabels } from './hsk4.js'
 import { hsk4Grammar } from './hsk4grammar.js'
+import { hsk4Topics } from './hsk4topics.js'
+import { hsk4Tasks } from './hsk4tasks.js'
+import { hsk4Confusables } from './hsk4confusables.js'
 
 import { hsk5 } from './hsk5.js'
 import { hsk5Grammar } from './hsk5grammar.js'
+import { hsk5Topics } from './hsk5topics.js'
+import { hsk5Tasks } from './hsk5tasks.js'
+import { hsk5Confusables } from './hsk5confusables.js'
 
 // ── Vocab: semua level murni dari Test Standard resmi (tanpa supplement) ──
 // Catatan: supplement GF 0025 (kata tambahan di luar cakupan resmi HSK 3.0)
@@ -54,7 +69,7 @@ export const hsk3Complete = [...hsk3]
 /** HSK 4: kata resmi (tanpa supplement) */
 export const hsk4Complete = [...hsk4]
 
-/** HSK 5: kata resmi (1592 kata, sekarang sudah digabung jadi satu file hsk5.js, tanpa supplement) */
+/** HSK 5: kata resmi (1600 kata, satu file hsk5.js, tanpa supplement) */
 export const hsk5Complete = [...hsk5]
 
 // ── Grammar Exports ──────────────────────────────────────────
@@ -73,51 +88,51 @@ export const allGrammar = {
   5: hsk5Grammar,
 }
 
-// ── Topics Exports (baru, saat ini baru HSK1) ────────────────
-export { hsk1Topics }
-export { hsk1TopicLabels }
+// ── Topics Exports (HSK1-4 lengkap; HSK5 baru di-wire sesi ini) ──
+export { hsk1Topics, hsk2Topics, hsk3Topics, hsk4Topics, hsk5Topics }
+export { hsk1TopicLabels, hsk2TopicLabels, hsk3TopicLabels, hsk4TopicLabels }
 
-/** Semua topik per level — tambahkan hsk2Topics dst di sini kalau sudah dibuat */
+/** Semua topik per level */
 export const allTopics = {
   1: hsk1Topics,
-  2: [],
-  3: [],
-  4: [],
-  5: [],
+  2: hsk2Topics,
+  3: hsk3Topics,
+  4: hsk4Topics,
+  5: hsk5Topics,
 }
 
 /** Label kategori filter vocab per level (hsk1TopicLabels dst) — object kosong
- *  di level yang belum punya field `topic` di vocabnya */
+ *  di level yang belum punya field `topic` di vocabnya (HSK5 memang tidak punya field topic) */
 export const topicLabelsByLevel = {
   1: hsk1TopicLabels,
-  2: {},
-  3: {},
-  4: {},
+  2: hsk2TopicLabels,
+  3: hsk3TopicLabels,
+  4: hsk4TopicLabels,
   5: {},
 }
 
-// ── Tasks Exports (baru, saat ini baru HSK1) ─────────────────
-export { hsk1Tasks }
+// ── Tasks Exports (HSK1-5 lengkap) ────────────────────────────
+export { hsk1Tasks, hsk2Tasks, hsk3Tasks, hsk4Tasks, hsk5Tasks }
 
-/** Semua task (任务大纲) per level — tambahkan hsk2Tasks dst di sini kalau sudah dibuat */
+/** Semua task (任务大纲) per level */
 export const allTasks = {
   1: hsk1Tasks,
-  2: [],
-  3: [],
-  4: [],
-  5: [],
+  2: hsk2Tasks,
+  3: hsk3Tasks,
+  4: hsk4Tasks,
+  5: hsk5Tasks,
 }
 
-// ── Confusables Exports (baru, saat ini baru HSK1) ───────────
-export { hsk1Confusables }
+// ── Confusables Exports (HSK1-5 lengkap) ──────────────────────
+export { hsk1Confusables, hsk2Confusables, hsk3Confusables, hsk4Confusables, hsk5Confusables }
 
 /** Semua confusable-word groups per level */
 export const allConfusables = {
   1: hsk1Confusables,
-  2: [],
-  3: [],
-  4: [],
-  5: [],
+  2: hsk2Confusables,
+  3: hsk3Confusables,
+  4: hsk4Confusables,
+  5: hsk5Confusables,
 }
 
 // ── Raw Exports (Test Standard resmi, tanpa supplement) ──────
@@ -172,7 +187,7 @@ export function getLevel(level, complete = false) {
 
 /**
  * Ambil kata dari satu level, difilter berdasarkan kategori topic
- * (khusus HSK1 untuk saat ini — field `topic` baru ada di hsk1.js)
+ * (field `topic` ada di vocab HSK1-4; HSK5 tidak punya field ini)
  * @param {number} level
  * @param {string} topic - kode kategori, misal 'makanan', 'pribadi', dst
  */
@@ -463,24 +478,24 @@ export const dataStats = {
   },
   topicsCount: {
     1: hsk1Topics.length,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
+    2: hsk2Topics.length,
+    3: hsk3Topics.length,
+    4: hsk4Topics.length,
+    5: hsk5Topics.length,
   },
   tasksCount: {
     1: hsk1Tasks.length,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
+    2: hsk2Tasks.length,
+    3: hsk3Tasks.length,
+    4: hsk4Tasks.length,
+    5: hsk5Tasks.length,
   },
   confusablesCount: {
     1: hsk1Confusables.length,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
+    2: hsk2Confusables.length,
+    3: hsk3Confusables.length,
+    4: hsk4Confusables.length,
+    5: hsk5Confusables.length,
   },
   description: 'HSK 3.0 Kosakata Lengkap Level 1-5 dengan Terjemahan Bahasa Indonesia',
   sources: [
@@ -522,9 +537,10 @@ export default {
   // Grammar
   allGrammar, hsk1Grammar, hsk2Grammar, hsk3Grammar, hsk4Grammar, hsk5Grammar,
   // Topics / Tasks / Confusables
-  allTopics, hsk1Topics, hsk1TopicLabels, topicLabelsByLevel,
-  allTasks, hsk1Tasks,
-  allConfusables, hsk1Confusables,
+  allTopics, hsk1Topics, hsk2Topics, hsk3Topics, hsk4Topics, hsk5Topics,
+  hsk1TopicLabels, hsk2TopicLabels, hsk3TopicLabels, hsk4TopicLabels, topicLabelsByLevel,
+  allTasks, hsk1Tasks, hsk2Tasks, hsk3Tasks, hsk4Tasks, hsk5Tasks,
+  allConfusables, hsk1Confusables, hsk2Confusables, hsk3Confusables, hsk4Confusables, hsk5Confusables,
   // Fungsi
   getLevel, getUpToLevel, getWordsByTopic, searchWords, getWordById,
   getRandomWords, getWordsByInitial, getWordsByLength,

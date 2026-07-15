@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSettings } from '../hooks/usesettings'
-import { storage, STORAGE_KEYS } from '../utils/storage'
+import { storage, STORAGE_KEYS, deleteData } from '../utils/storage'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { QUIZ_TYPES, QUIZ_TYPE_LABELS, QUIZ_LENGTHS } from '../constants/quiztypes'
 import { useAuthContext } from '../context/authcontext'
@@ -70,16 +70,38 @@ export function Settings() {
   const { userId } = useAuthContext()
   const { settings, updateSetting, resetSettings } = useSettings(userId)
 
-  function clearAllData() {
-    if (window.confirm('Hapus SEMUA data progress, streak, SRS, dan log belajar?\n\nTindakan ini tidak bisa dibatalkan.')) {
-      storage.clear()
-      window.location.reload()
+  async function clearAllData() {
+    if (!window.confirm('Hapus SEMUA data progress, streak, grammar, tasks, confusables, SRS, achievement, XP, bookmark, dan log belajar?\n\nTindakan ini tidak bisa dibatalkan.')) {
+      return
     }
+
+    storage.clear()
+
+    if (userId) {
+      try {
+        await Promise.all([
+          deleteData('user_srs', { user_id: userId }),
+          deleteData('user_progress_snapshot', { user_id: userId }),
+          deleteData('user_achievements', { user_id: userId }),
+          deleteData('user_xp', { user_id: userId }),
+          deleteData('bookmarks', { user_id: userId }),
+          deleteData('daily_activity', { user_id: userId }),
+        ])
+      } catch (e) {
+        console.warn('[settings] clear all data sync:', e)
+      }
+    }
+
+    window.location.reload()
   }
 
   function resetSRS() {
     if (window.confirm('Reset data SRS?\nProgress dan kata yang dikuasai tidak akan terhapus.')) {
       storage.remove(STORAGE_KEYS.SRS)
+      if (userId) {
+        deleteData('user_srs', { user_id: userId })
+          .catch(e => console.warn('[srs] reset sync:', e))
+      }
       alert('Data SRS berhasil direset.')
     }
   }

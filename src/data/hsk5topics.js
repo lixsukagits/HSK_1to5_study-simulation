@@ -90,6 +90,8 @@ const hsk5Topics = [
   { id: '5-072', code: '7.9.2', tier1: { zh: '文化与传统', id: 'Budaya dan Tradisi' }, tier2: { zh: '古代科技', id: 'Teknologi Kuno' }, tier3: { zh: '古人科学观念、古代科学家事迹', id: 'Pandangan Ilmiah dan Kisah Ilmuwan Kuno' }, level: 5 },
 ];
 
+export { hsk5Topics };
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { hsk5Topics };
 }

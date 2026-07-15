@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
-import { hskData } from '../data'
+import { hskDataComplete, topicLabelsByLevel } from '../data'
 import { useProgress } from '../hooks/useprogress'
 import { useStreak } from '../hooks/usestreak'
 import { useSettings } from '../hooks/usesettings'
+import { useAuthContext } from '../context/authcontext'
 import { shuffle } from '../utils/quizgenerator'
 import { AudioButton } from '../components/ui/audiobutton'
+import { VocabSearch } from '../components/vocab/vocabsearch'
+import { GRADE } from '../utils/srs'
 import { initTTS } from '../utils/tts'
 
 initTTS()
@@ -26,10 +29,12 @@ function normalizePinyin(str) {
 export function WritingPractice() {
   const { settings }     = useSettings()
   const { userId } = useAuthContext()
-  const { logActivity }  = useProgress(userId)
+  const { markSeen, reviewSRS, logActivity } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
 
   const [selectedLevel, setSelectedLevel] = useState(settings.preferredLevel || 1)
+  const [topicFilter, setTopicFilter] = useState('all')
+  const [searchedWord, setSearchedWord] = useState(null)
   const [mode,    setMode]   = useState(null)   // null | 'hanzi2pinyin' | 'pinyin2hanzi' | 'arti2hanzi'
   const [deck,    setDeck]   = useState([])
   const [idx,     setIdx]    = useState(0)
@@ -38,14 +43,36 @@ export function WritingPractice() {
   const [correct, setCorrect] = useState(0)
   const [done,    setDone]   = useState(false)
 
-  const vocab = hskData[selectedLevel] || []
-  const lvl   = HSK_LEVELS.find(l => l.level === selectedLevel) || HSK_LEVELS[0]
+  const vocabAll = hskDataComplete[selectedLevel] || []
+  const lvl      = HSK_LEVELS.find(l => l.level === selectedLevel) || HSK_LEVELS[0]
+
+  // Label kategori topic untuk level ini — pola sama seperti vocab.jsx
+  const topicLabels = topicLabelsByLevel[selectedLevel] || {}
+  const hasTopics   = Object.keys(topicLabels).length > 0
+  const vocab       = (hasTopics && topicFilter !== 'all')
+    ? vocabAll.filter(v => v.topic === topicFilter)
+    : vocabAll
+
   const current = deck[idx]
 
+  function selectLevel(level) {
+    setSelectedLevel(level)
+    setTopicFilter('all')
+    setSearchedWord(null)
+  }
+
   function startMode(m) {
-    setDeck(shuffle(vocab).slice(0, 20))
+    setDeck(searchedWord ? [searchedWord] : shuffle(vocab).slice(0, 20))
     setIdx(0); setInput(''); setResult(null)
     setCorrect(0); setDone(false); setMode(m)
+  }
+
+  function handleSearchSelect(kata) {
+    setSearchedWord(kata)
+  }
+
+  function clearSearch() {
+    setSearchedWord(null)
   }
 
   function getQuestion() {
@@ -64,6 +91,7 @@ export function WritingPractice() {
         placeholder: 'Ketik karakter Hanzi',
         answer: current.hanzi,
         type: 'hanzi',
+        matchField: 'pinyin',
       }
       case 'arti2hanzi': return {
         prompt: current.arti,
@@ -71,6 +99,7 @@ export function WritingPractice() {
         placeholder: 'Ketik karakter Hanzi',
         answer: current.hanzi,
         type: 'hanzi',
+        matchField: 'arti',
       }
       default: return { prompt: '', placeholder: '', answer: '' }
     }
@@ -86,12 +115,23 @@ export function WritingPractice() {
       const normalized = normalizePinyin(input)
       const expected   = normalizePinyin(q.answer)
       isCorrect = normalized === expected
+    } else if (q.matchField) {
+      // Beberapa kata HSK3-5 punya lebih dari satu hanzi valid untuk arti/pinyin
+      // yang sama persis (mis. "atau; ataupun" -> 或 atau 或者). Terima semua
+      // hanzi yang berbagi nilai matchField yang sama di level ini, bukan cuma
+      // hanzi milik entri current secara spesifik.
+      const acceptable = vocabAll
+        .filter(v => v[q.matchField] === current[q.matchField])
+        .map(v => v.hanzi)
+      isCorrect = acceptable.includes(input.trim())
     } else {
       isCorrect = input.trim() === q.answer
     }
 
     setResult(isCorrect ? 'correct' : 'wrong')
     if (isCorrect) setCorrect(c => c + 1)
+    markSeen(current.level || selectedLevel, current.id)
+    reviewSRS(current.id, isCorrect ? GRADE.GOOD : GRADE.WRONG)
     logActivity(1, isCorrect ? 1 : 0)
     if (isCorrect) recordActivity()
   }
@@ -119,10 +159,30 @@ export function WritingPractice() {
         <h1 className="font-display text-3xl font-extrabold mb-1">Latihan Tulis</h1>
         <p className="text-white/35 text-sm mb-8">Ketik jawaban untuk melatih ingatan aktif</p>
 
+        <p className="section-label mb-3">Latih Kata Tertentu</p>
+        <div className="mb-4">
+          <VocabSearch
+            vocab={vocabAll}
+            levelColor={lvl.warnaHex}
+            placeholder="Cari kata untuk dilatih khusus..."
+            onSelect={handleSearchSelect}
+          />
+        </div>
+        {searchedWord && (
+          <div className="card p-3 mb-8 flex items-center justify-between"
+            style={{ borderColor: 'rgba(96,165,250,0.25)', background: 'rgba(96,165,250,0.05)' }}>
+            <div className="flex items-center gap-2">
+              <span className="font-hanzi text-lg font-bold" style={{ color: lvl.warnaHex }}>{searchedWord.hanzi}</span>
+              <span className="text-white/40 text-xs">{searchedWord.pinyin} · {searchedWord.arti}</span>
+            </div>
+            <button onClick={clearSearch} className="text-white/30 hover:text-white/70 text-sm px-2">Batal</button>
+          </div>
+        )}
+
         <p className="section-label mb-3">Level</p>
         <div className="grid grid-cols-5 gap-2 mb-8">
           {HSK_LEVELS.map((l, i) => (
-            <button key={l.level} onClick={() => setSelectedLevel(l.level)}
+            <button key={l.level} onClick={() => selectLevel(l.level)}
               className={`card p-3 text-center transition-all ${selectedLevel === l.level ? 'border-white/25 bg-white/5' : 'hover:border-white/15'}`}>
               <div className="text-xl mb-1">{LEVEL_EMOJIS[i]}</div>
               <div className="text-xs font-bold" style={{ color: l.warnaHex }}>{l.name}</div>
@@ -130,7 +190,30 @@ export function WritingPractice() {
           ))}
         </div>
 
-        <p className="section-label mb-3">Mode Latihan</p>
+        {/* Topic filter — cuma muncul kalau level ini punya field `topic` di vocabnya */}
+        {hasTopics && (
+          <>
+            <p className="section-label mb-3">Topik</p>
+            <div className="flex gap-1.5 mb-8 flex-wrap">
+              <button onClick={() => setTopicFilter('all')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  topicFilter === 'all' ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+                }`}>
+                Semua Topik
+              </button>
+              {Object.entries(topicLabels).map(([key, label]) => (
+                <button key={key} onClick={() => setTopicFilter(key)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                    topicFilter === key ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+                  }`}>
+                  {label.id}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        <p className="section-label mb-3">{searchedWord ? `Mode Latihan — 1 kata terpilih` : 'Mode Latihan'}</p>
         <div className="grid grid-cols-1 gap-3">
           {[
             { key:'hanzi2pinyin', icon:'🔠', label:'Hanzi → Pinyin',          desc:'Lihat karakter, ketik cara bacanya',       color:'rgba(96,165,250,0.08)',  border:'rgba(96,165,250,0.2)' },
@@ -138,7 +221,8 @@ export function WritingPractice() {
             { key:'arti2hanzi',   icon:'🔤', label:'Arti → Hanzi',            desc:'Lihat arti Indonesia, ketik karakternya',  color:'rgba(74,222,128,0.06)',  border:'rgba(74,222,128,0.15)' },
           ].map(m => (
             <button key={m.key} onClick={() => startMode(m.key)}
-              className="card-hover p-4 text-left flex items-center gap-4"
+              disabled={vocab.length === 0}
+              className="card-hover p-4 text-left flex items-center gap-4 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               style={{ background: m.color, borderColor: m.border }}>
               <span className="text-3xl">{m.icon}</span>
               <div>
@@ -245,7 +329,9 @@ export function WritingPractice() {
           <div className="mt-3 text-center animate-bounce-in">
             <span className="text-red-400 font-semibold">✗ Jawaban: </span>
             <span className={`font-semibold ${q.type === 'hanzi' ? 'font-hanzi text-xl text-primary-400' : 'text-white'}`}>
-              {q.answer}
+              {q.matchField
+                ? [...new Set(vocabAll.filter(v => v[q.matchField] === current[q.matchField]).map(v => v.hanzi))].join(' / ')
+                : q.answer}
             </span>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { QUIZ_TYPE_LABELS } from '../../constants/quiztypes'
+import { QUIZ_TYPE_LABELS, QUIZ_TYPES } from '../../constants/quiztypes'
 
 export function QuizResults({ answers = [], total, type, onRetry, onBack }) {
   const score  = answers.filter((a) => a.correct).length
@@ -32,25 +32,39 @@ export function QuizResults({ answers = [], total, type, onRetry, onBack }) {
       <div className="mb-6">
         <h3 className="text-white/30 text-[10px] font-semibold tracking-widest uppercase mb-3">Review Jawaban</h3>
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-          {answers.map((a, i) => (
-            <div
-              key={i}
-              className={`card p-3 flex items-center gap-3 text-sm ${
-                a.correct ? 'border-green-400/20 bg-green-400/5' : 'border-red-400/20 bg-red-400/5'
-              }`}
-            >
-              <span className={`flex-shrink-0 text-base ${a.correct ? 'text-green-400' : 'text-red-400'}`}>
-                {a.correct ? '✓' : '✗'}
-              </span>
-              <span className="font-hanzi text-xl text-white/80 flex-shrink-0">
-                {a.question.kata?.hanzi}
-              </span>
-              <span className="text-white/40 flex-1 min-w-0 truncate">{a.question.kata?.arti}</span>
-              {!a.correct && (
-                <span className="text-red-400/60 text-xs flex-shrink-0 truncate max-w-24">{a.selectedJawaban}</span>
-              )}
-            </div>
-          ))}
+          {answers.map((a, i) => {
+            const isConfusableAnswer = a.question.type === QUIZ_TYPES.CONFUSABLE
+            return (
+              <div
+                key={i}
+                className={`card p-3 flex items-center gap-3 text-sm ${
+                  a.correct ? 'border-green-400/20 bg-green-400/5' : 'border-red-400/20 bg-red-400/5'
+                }`}
+              >
+                <span className={`flex-shrink-0 text-base ${a.correct ? 'text-green-400' : 'text-red-400'}`}>
+                  {a.correct ? '✓' : '✗'}
+                </span>
+                {isConfusableAnswer ? (
+                  <>
+                    <span className="font-hanzi text-xl text-white/80 flex-shrink-0">
+                      {a.question.jawaban}
+                    </span>
+                    <span className="text-white/40 flex-1 min-w-0 truncate">{a.question.groupTitle}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-hanzi text-xl text-white/80 flex-shrink-0">
+                      {a.question.kata?.hanzi}
+                    </span>
+                    <span className="text-white/40 flex-1 min-w-0 truncate">{a.question.kata?.arti}</span>
+                  </>
+                )}
+                {!a.correct && (
+                  <span className="text-red-400/60 text-xs flex-shrink-0 truncate max-w-24">{a.selectedJawaban}</span>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 

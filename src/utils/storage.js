@@ -64,16 +64,25 @@ export function isOnline() {
 
 /**
  * Upsert data ke Supabase (atau queue jika offline)
+ * @param {string} table
+ * @param {object|object[]} payload
+ * @param {string} [onConflict] - nama kolom (dipisah koma) untuk resolve konflik,
+ *   WAJIB diisi kalau tabel tujuan punya unique constraint selain primary key
+ *   (mis. 'user_id,word_id' untuk user_srs, 'user_id,activity_date' untuk
+ *   daily_activity) — kalau kosong, Supabase resolve konflik lewat PRIMARY KEY
+ *   tabel, dan karena payload kita nggak pernah kirim PK, upsert jadi selalu
+ *   INSERT baru lalu bentrok sama unique constraint (error 23505 duplicate key).
  */
-export async function upsertData(table, payload) {
+export async function upsertData(table, payload, onConflict) {
   if (isOnline()) {
-    const { error } = await supabase.from(table).upsert(payload)
+    const options = onConflict ? { onConflict } : undefined
+    const { error } = await supabase.from(table).upsert(payload, options)
     if (error) {
       console.error(`[storage] Gagal upsert ke ${table}:`, error)
       throw error
     }
   } else {
-    await enqueue(table, 'upsert', payload)
+    await enqueue(table, 'upsert', payload, onConflict)
   }
 }
 
@@ -147,7 +156,7 @@ export async function syncSnapshotField(userId, field, value) {
 // dan menyimpannya ke localStorage sebagai cache.
 
 /**
- * Load progress dari user_progress_snapshot
+ * Load progress dari user_progress_snapshot (disimpan dalam field data.progress)
  * Shape: { level: { seen: [], mastered: [] } }
  */
 export async function loadProgress(userId) {
@@ -159,8 +168,8 @@ export async function loadProgress(userId) {
       .select('data')
       .eq('user_id', userId)
       .maybeSingle()
-    if (error || !data) return fallback
-    const parsed = data.data ?? {}
+    if (error || !data?.data?.progress) return fallback
+    const parsed = data.data.progress
     storage.set(STORAGE_KEYS.PROGRESS, parsed)
     return parsed
   } catch {
