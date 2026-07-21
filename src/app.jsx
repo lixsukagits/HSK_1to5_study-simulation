@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom'
 import { ProtectedRoute }     from './components/auth/protectedroute'
 import Navbar                 from './components/layout/navbar'
+import Sidebar                from './components/layout/sidebar'
 import Footer                 from './components/layout/footer'
+import { RouteEffects }       from './components/layout/routeeffects'
+import { OfflineBanner }      from './components/layout/offlinebanner'
 import { AchievementToast }   from './components/ui/achievementtoast'
 
 import LoginPage      from './pages/login'
@@ -36,8 +39,9 @@ function ProtectedLayout() {
   return (
     <ProtectedRoute>
       <>
+        <Sidebar />
         <Navbar />
-        <main className="sm:pt-[60px] pb-16 sm:pb-0">
+        <main className="sm:pl-64 pb-16 sm:pb-0">
           <Outlet />
         </main>
         <Footer />
@@ -50,6 +54,8 @@ function ProtectedLayout() {
 export default function App() {
   return (
     <BrowserRouter basename={basename}>
+      <RouteEffects />
+      <OfflineBanner />
       <Routes>
         {/* Public */}
         <Route path="/login"    element={<LoginPage />} />

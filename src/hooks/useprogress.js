@@ -5,9 +5,11 @@ import { sm2, GRADE as SRS_GRADE } from '../utils/srs'
 import { checkAchievements, ACHIEVEMENT_MAP, XP_REWARDS } from '../utils/achievements'
 
 // ─── Internal helpers ──────────────────────────────────────────
+// amount boleh negatif (dipakai buat clawback XP saat unmarkMastered).
+// total di-clamp minimal 0 supaya gak pernah minus di UI.
 function _addXP(amount, userId) {
   const xp   = storage.get(STORAGE_KEYS.XP, { total: 0 })
-  const next = { ...xp, total: (xp.total || 0) + amount }
+  const next = { ...xp, total: Math.max(0, (xp.total || 0) + amount) }
   storage.set(STORAGE_KEYS.XP, next)
   if (userId) {
     upsertData('user_xp', { user_id: userId, total: next.total })
@@ -134,11 +136,20 @@ export function useProgress(userId = null) {
     })
   }, [userId, _sync])
 
+  // markMastered dan unmarkMastered adalah SEPASANG kebalikan yang simetris:
+  // mark memberi +WORD_MASTERED XP, unmark menariknya kembali -WORD_MASTERED XP.
+  // Guard di masing-masing (cek posisi wordId di array `mastered` SAAT INI)
+  // mencegah double-fire menambah/mengurangi XP dobel kalau dipanggil berulang
+  // tanpa perubahan state yang nyata. Karena keduanya simetris, toggle
+  // mark→unmark berkali-kali akan selalu net ke 0 XP — tidak akan pernah
+  // menumpuk seperti sebelumnya.
   const markMastered = useCallback((level, wordId) => {
     setProgress(prev => {
-      const lvl      = prev[level] || { seen: [], mastered: [] }
+      const lvl = prev[level] || { seen: [], mastered: [] }
+      if (lvl.mastered.includes(wordId)) return prev // sudah mastered, no-op — cegah XP dobel
+
       const seen     = lvl.seen.includes(wordId) ? lvl.seen : [...lvl.seen, wordId]
-      const mastered = lvl.mastered.includes(wordId) ? lvl.mastered : [...lvl.mastered, wordId]
+      const mastered = [...lvl.mastered, wordId]
       const next     = { ...prev, [level]: { ...lvl, seen, mastered } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
 
@@ -158,11 +169,14 @@ export function useProgress(userId = null) {
 
   const unmarkMastered = useCallback((level, wordId) => {
     setProgress(prev => {
-      const lvl      = prev[level] || { seen: [], mastered: [] }
+      const lvl = prev[level] || { seen: [], mastered: [] }
+      if (!lvl.mastered.includes(wordId)) return prev // memang belum mastered, gak ada yang perlu ditarik
+
       const mastered = lvl.mastered.filter(id => id !== wordId)
       const next     = { ...prev, [level]: { ...lvl, mastered } }
       storage.set(STORAGE_KEYS.PROGRESS, next)
       _updateSRS(wordId, SRS_GRADE.WRONG, userId)
+      _addXP(-XP_REWARDS.WORD_MASTERED, userId) // clawback — simetris sama markMastered
       _sync(next)
       return next
     })

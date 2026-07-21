@@ -1,9 +1,8 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { hskDataComplete, topicLabelsByLevel } from '../data'
 import { useProgress } from '../hooks/useprogress'
-import { useStreak } from '../hooks/usestreak'
 import { useBookmark } from '../hooks/usebookmark'
 import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
@@ -27,8 +26,7 @@ export function Vocab() {
   const hasTopics   = Object.keys(topicLabels).length > 0
 
   const { userId } = useAuthContext()
-  const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress(userId)
-  const { recordActivity } = useStreak(userId)
+  const { progress, markSeen, markMastered, unmarkMastered } = useProgress(userId)
   const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
   const lvlPrg      = progress[lvl.level] || { seen: [], mastered: [] }
@@ -73,8 +71,6 @@ export function Vocab() {
       unmarkMastered(lvl.level, kata.id)
     } else {
       markMastered(lvl.level, kata.id)
-      logActivity(1, 1)
-      recordActivity()
     }
     markSeen(lvl.level, kata.id)
   }
@@ -84,6 +80,47 @@ export function Vocab() {
   function openWord(v) {
     setModalWord(v)
     markSeen(lvl.level, v.id)
+  }
+
+  // ─── Navigasi kata di dalam popup (prev/next + swipe) ─────────
+  // Index dihitung dari `filtered` (bukan cuma `displayed`) supaya navigasi
+  // tetap mulus lintas halaman pagination tanpa user perlu ganti halaman manual.
+  const modalIndex = modalWord ? filtered.findIndex(w => w.id === modalWord.id) : -1
+  const hasPrev = modalIndex > 0
+  const hasNext = modalIndex >= 0 && modalIndex < filtered.length - 1
+
+  function goToIndex(idx) {
+    const w = filtered[idx]
+    if (!w) return
+    setModalWord(w)
+    markSeen(lvl.level, w.id)
+    setPage(Math.floor(idx / PAGE_SIZE) + 1) // sinkronkan nomor halaman biar konsisten pas modal ditutup
+  }
+
+  function goPrev() { if (hasPrev) goToIndex(modalIndex - 1) }
+  function goNext() { if (hasNext) goToIndex(modalIndex + 1) }
+
+  // Klik "Tandai Hafal" dari popup: auto lanjut ke kata berikutnya HANYA kalau
+  // barusan menandai hafal (bukan waktu batalin tandai hafal)
+  function handleModalToggleMastered() {
+    if (!modalWord) return
+    const wasMastered = masteredSet.has(modalWord.id)
+    toggleMastered(modalWord)
+    if (!wasMastered) goNext()
+  }
+
+  // Swipe di HP: geser kanan = kata sebelumnya, geser kiri = kata berikutnya
+  const touchStartXRef = useRef(null)
+  function handleTouchStart(e) {
+    touchStartXRef.current = e.touches[0].clientX
+  }
+  function handleTouchEnd(e) {
+    if (touchStartXRef.current === null) return
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current
+    const SWIPE_THRESHOLD = 50
+    if (deltaX > SWIPE_THRESHOLD) goPrev()
+    else if (deltaX < -SWIPE_THRESHOLD) goNext()
+    touchStartXRef.current = null
   }
 
   const pct = Math.min(100, Math.round((masteredSet.size / lvl.totalKata) * 100))
@@ -237,7 +274,10 @@ export function Vocab() {
       {/* Popup detail kata */}
       <Modal open={!!modalWord} onClose={() => setModalWord(null)} size="xl" title={modalWord?.pinyin}>
         {modalWord && (
-          <div>
+          <div
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="flex items-center gap-4 mb-5 flex-wrap">
               <div className="font-hanzi text-6xl font-bold leading-none" style={{ color: lvl.warnaHex }}>
                 {modalWord.hanzi}
@@ -260,7 +300,7 @@ export function Vocab() {
                 size="md"
               />
               <button
-                onClick={() => toggleMastered(modalWord)}
+                onClick={handleModalToggleMastered}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
                   masteredSet.has(modalWord.id)
                     ? 'bg-green-400/20 text-green-400 border border-green-400/30'
@@ -282,9 +322,36 @@ export function Vocab() {
                 </div>
               </div>
             )}
+
+            <p className="hidden sm:block text-white/15 text-[10px] text-center mt-5">
+              {modalIndex + 1} / {filtered.length} · gunakan tombol ← → untuk lanjut
+            </p>
           </div>
         )}
       </Modal>
+
+      {/* Tombol navigasi kiri/kanan — lingkaran mengambang TERPISAH dari box modal,
+          nempel di tepi layar. Cuma tampil di layar sm ke atas (laptop); di HP pakai swipe. */}
+      {modalWord && (
+        <>
+          <button
+            onClick={goPrev}
+            disabled={!hasPrev}
+            aria-label="Kata sebelumnya"
+            className="hidden sm:flex fixed left-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
+          >
+            ←
+          </button>
+          <button
+            onClick={goNext}
+            disabled={!hasNext}
+            aria-label="Kata berikutnya"
+            className="hidden sm:flex fixed right-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
+          >
+            →
+          </button>
+        </>
+      )}
     </div>
   )
 }

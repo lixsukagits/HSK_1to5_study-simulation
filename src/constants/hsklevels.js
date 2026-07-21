@@ -4,7 +4,7 @@ export const HSK_LEVELS = [
   {
     level: 1,
     name: 'HSK 1',
-    totalKata: 500,
+    totalKata: 300,
     warna: 'level-1',        // green
     warnaHex: '#4ade80',
     keterangan: 'Pemula — Kosakata dasar sehari-hari',
@@ -13,7 +13,7 @@ export const HSK_LEVELS = [
   {
     level: 2,
     name: 'HSK 2',
-    totalKata: 772,
+    totalKata: 200,
     warna: 'level-2',        // blue
     warnaHex: '#60a5fa',
     keterangan: 'Dasar — Komunikasi sederhana',
@@ -22,7 +22,7 @@ export const HSK_LEVELS = [
   {
     level: 3,
     name: 'HSK 3',
-    totalKata: 973,
+    totalKata: 500,
     warna: 'level-3',        // amber
     warnaHex: '#f59e0b',
     keterangan: 'Menengah Bawah — Topik umum',
@@ -40,7 +40,7 @@ export const HSK_LEVELS = [
   {
     level: 5,
     name: 'HSK 5',
-    totalKata: 1071,
+    totalKata: 1600,
     warna: 'level-5',        // purple
     warnaHex: '#a78bfa',
     keterangan: 'Menengah Atas — Membaca surat kabar & sastra',

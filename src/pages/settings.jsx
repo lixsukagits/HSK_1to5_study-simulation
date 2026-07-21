@@ -174,6 +174,11 @@ export function Settings() {
         <Row label="Target harian" desc="Kata yang ingin dipelajari setiap hari">
           <Stepper value={settings.dailyTarget} min={5} max={100} step={5} onChange={v => updateSetting('dailyTarget', v)} />
         </Row>
+        <Row label="Tanggal target" desc='Target tanggal kamu ingin menguasai HSK 1-5 (dipakai buat hitung "Sisa target" di beranda)'>
+          <input type="date" value={settings.targetDate}
+            onChange={e => updateSetting('targetDate', e.target.value)}
+            className="input py-1.5 text-sm w-auto" />
+        </Row>
         <Row label="Level favorit" desc="Level default saat membuka app">
           <select value={settings.preferredLevel} onChange={e => updateSetting('preferredLevel', Number(e.target.value))} className="input py-1.5 text-sm w-auto">
             {HSK_LEVELS.map(l => <option key={l.level} value={l.level}>{l.name}</option>)}

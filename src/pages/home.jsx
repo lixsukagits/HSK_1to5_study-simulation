@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { hskData } from '../data'
-import { daysUntil, TARGET_DATE, toDateKey } from '../utils/datehelper'
+import { daysUntil, toDateKey } from '../utils/datehelper'
 import { getDueWords } from '../utils/srs'
 import { useAuthContext } from '../context/authcontext'
 import { useProgress } from '../hooks/useprogress'
@@ -44,7 +44,7 @@ export default function Home() {
   const { srsData }            = useSRS(userId)
 
   const todayLog  = dailyLog[toDateKey()] || { studied: 0 }
-  const daysLeft  = daysUntil(TARGET_DATE)
+  const daysLeft  = daysUntil(settings.targetDate)
 
   const totalMastered = Object.values(progress).reduce((s, l) => s + (l.mastered?.length || 0), 0)
   const totalKata     = HSK_LEVELS.reduce((s, l) => s + l.totalKata, 0)
@@ -54,7 +54,7 @@ export default function Home() {
   const todayPct      = Math.min(100, Math.round((todayLog.studied / target) * 100))
 
   return (
-    <div className="min-h-screen px-4 py-8 max-w-4xl mx-auto animate-fade-in">
+    <div className="min-h-screen px-4 sm:px-8 lg:px-12 py-8 max-w-screen-2xl mx-auto animate-fade-in">
 
       {/* Hero */}
       <div className="relative mb-8 pt-2 overflow-hidden">
@@ -127,11 +127,18 @@ export default function Home() {
           { label:'XP Total',   value: xp.toLocaleString(), unit:'xp', color:'#a78bfa', icon:'⚡' },
           { label:'Sisa target',value: daysLeft,         unit:'hari', color:'#60a5fa', icon:'⏳' },
         ].map(s => (
-          <div key={s.label} className="card p-4 text-center">
-            <div className="text-xl mb-1 leading-none">{s.icon}</div>
-            <div className="font-display text-2xl font-extrabold leading-none" style={{ color:s.color }}>{s.value}</div>
-            <div className="text-white/25 text-[10px] uppercase tracking-widest mt-1">{s.unit}</div>
-            <div className="text-white/50 text-xs font-medium mt-1">{s.label}</div>
+          <div key={s.label} className="card p-4 flex items-center gap-3">
+            <div className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-xl leading-none"
+              style={{ background:`${s.color}1a` }}>
+              {s.icon}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-1">
+                <span className="font-display text-xl font-extrabold leading-none" style={{ color:s.color }}>{s.value}</span>
+                <span className="text-white/25 text-[10px] uppercase tracking-widest">{s.unit}</span>
+              </div>
+              <div className="text-white/50 text-xs font-medium mt-1 truncate">{s.label}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -153,7 +160,7 @@ export default function Home() {
 
       {/* Level cards */}
       <p className="section-label mb-4">Level HSK</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 mb-10">
         {HSK_LEVELS.map((lvl, i) => {
           const lvlPrg   = progress[lvl.level] || {}
           const mastered = lvlPrg.mastered?.length || 0
@@ -183,7 +190,7 @@ export default function Home() {
 
       {/* Fitur mini games + latihan */}
       <p className="section-label mb-4">Fitur Lainnya</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {[
           { label:'Flash Card',      icon:'🃏', to:'/flashcards',  color:'rgba(237,21,21,0.08)',  border:'rgba(237,21,21,0.15)'  },
           { label:'Kuis',            icon:'✏️', to:'/quiz',        color:'rgba(96,165,250,0.08)', border:'rgba(96,165,250,0.15)' },

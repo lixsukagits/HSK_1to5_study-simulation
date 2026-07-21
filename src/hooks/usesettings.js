@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { storage, STORAGE_KEYS, upsertData, loadSettings } from '../utils/storage'
+import { TARGET_DATE } from '../utils/datehelper'
 
 export const DEFAULT_SETTINGS = {
   dailyTarget:    20,
@@ -12,6 +13,7 @@ export const DEFAULT_SETTINGS = {
   preferredLevel: 1,
   theme:          'dark',
   hanziSize:      'md',
+  targetDate:     TARGET_DATE,
 }
 
 function applyTheme(theme) {

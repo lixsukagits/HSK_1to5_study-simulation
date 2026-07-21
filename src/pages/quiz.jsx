@@ -89,7 +89,7 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 export function Quiz() {
   const { settings }   = useSettings()
   const { userId } = useAuthContext()
-  const { logActivity, reviewSRS } = useProgress(userId)
+  const { logActivity, reviewSRS, progress, unmarkMastered } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
   const { getDue, GRADE } = useSRS(userId)
 
@@ -206,8 +206,24 @@ export function Quiz() {
       answer(selected)
       setAnswered(null)
       logActivity(1, correct ? 1 : 0)
-      if (correct) recordActivity()
-      if (wordId) reviewSRS(wordId, correct ? GRADE.GOOD : GRADE.WRONG)
+
+      if (correct) {
+        recordActivity()
+        if (wordId) reviewSRS(wordId, GRADE.GOOD)
+      } else if (wordId) {
+        // Kalau kata ini sebelumnya sudah ditandai "mastered" tapi dijawab
+        // salah di kuis, otomatis unmark. unmarkMastered() di useprogress.js
+        // sudah menangani update kartu SRS (grade WRONG) + clawback XP sendiri,
+        // jadi JANGAN panggil reviewSRS() lagi di sini — kalau dobel, kartu SRS
+        // kata ini bakal ke-update dua kali untuk satu jawaban yang sama.
+        const lvlPrg      = progress[selectedLevel] || { mastered: [] }
+        const wasMastered = lvlPrg.mastered?.includes(wordId)
+        if (wasMastered) {
+          unmarkMastered(selectedLevel, wordId)
+        } else {
+          reviewSRS(wordId, GRADE.WRONG)
+        }
+      }
     }, 900)
   }
 
