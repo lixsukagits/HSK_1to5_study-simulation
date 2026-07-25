@@ -1,6 +1,8 @@
 // ============================================================
 // HSK 3.0 Vocabulary Index — Data Lengkap HSK 1-5
 // Format vocab   : { id, hanzi, pinyin, arti, contoh, terjemahan, level, topic }
+//                  contoh2/terjemahan2 opsional: contoh kalimat kedua untuk kata
+//                  yang punya makna/penggunaan berbeda dari contoh pertama.
 // Format grammar : { id, gfCode, title, titleZh, pattern, explanation, examples, tags, level, relatedVocabIds }
 // Format topics  : { id, code, tier1, tier2, tier3, vocabIds, level }
 // Format tasks   : { id, code, titleZh, titleId, skills, level }
@@ -213,7 +215,9 @@ export function searchWords(query, levels = null, complete = false) {
     w.pinyin.toLowerCase().includes(q) ||
     w.arti.toLowerCase().includes(q) ||
     w.contoh.includes(q) ||
-    w.terjemahan.toLowerCase().includes(q)
+    w.terjemahan.toLowerCase().includes(q) ||
+    (w.contoh2 && w.contoh2.includes(q)) ||
+    (w.terjemahan2 && w.terjemahan2.toLowerCase().includes(q))
   )
 }
 

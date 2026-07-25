@@ -32,6 +32,19 @@ export const numberToTone = (pinyin) => {
 // Cek apakah string mengandung karakter China
 export const hasHanzi = (str) => /[\u4e00-\u9fff]/.test(str)
 
+// Normalisasi pinyin untuk keperluan SEARCH — hilangkan tanda nada (nǐ → ni),
+// angka nada (ni3 → ni), dan spasi (ni hao → nihao), lalu lowercase. Supaya
+// user bisa ketik dengan cara apapun (tone mark, angka, atau polos) dan tetap
+// match ke data yang sudah pakai tone mark di hsk*.js.
+export const normalizePinyin = (str = '') => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // buang combining diacritical marks (nada)
+    .replace(/[1-5]/g, '')           // buang angka nada kalau user ketik ni3
+    .replace(/\s+/g, '')             // "ni hao" === "nihao"
+    .toLowerCase()
+}
+
 // Ambil warna nada (untuk tampilan visual)
 export const toneColor = (toneNum) => {
   const colors = {

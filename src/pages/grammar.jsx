@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { allGrammar } from '../data'
 import { useGrammar } from '../hooks/usegrammar'
+import { useStreak } from '../hooks/usestreak'
 import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
 import { Modal } from '../components/ui/modal'
@@ -18,6 +19,7 @@ export function Grammar() {
 
   const { userId } = useAuthContext()
   const { isUnderstood, markUnderstood, unmarkUnderstood, getCount } = useGrammar(userId)
+  const { recordActivity } = useStreak(userId)
 
   const grammarList = allGrammar[lvl.level] || []
 
@@ -68,6 +70,10 @@ export function Grammar() {
       unmarkUnderstood(lvl.level, id)
     } else {
       markUnderstood(lvl.level, id)
+      // Belajar grammar manual tetap nyalain streak hari ini (belum masuk
+      // hitungan "X/target kata" karena itu masih khusus vocab — nanti kalau
+      // target grammar per hari ditambah di Settings, tinggal sambung logActivity juga di sini)
+      recordActivity()
     }
   }
 

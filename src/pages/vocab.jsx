@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { hskDataComplete, topicLabelsByLevel } from '../data'
 import { useProgress } from '../hooks/useprogress'
+import { useStreak } from '../hooks/usestreak'
 import { useBookmark } from '../hooks/usebookmark'
 import { useAuthContext } from '../context/authcontext'
 import { AudioButton } from '../components/ui/audiobutton'
@@ -26,7 +27,8 @@ export function Vocab() {
   const hasTopics   = Object.keys(topicLabels).length > 0
 
   const { userId } = useAuthContext()
-  const { progress, markSeen, markMastered, unmarkMastered } = useProgress(userId)
+  const { progress, markSeen, markMastered, unmarkMastered, logActivity } = useProgress(userId)
+  const { recordActivity } = useStreak(userId)
   const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
 
   const lvlPrg      = progress[lvl.level] || { seen: [], mastered: [] }
@@ -70,7 +72,13 @@ export function Vocab() {
     if (masteredSet.has(kata.id)) {
       unmarkMastered(lvl.level, kata.id)
     } else {
+      const belumPernahDilihat = !seenSet.has(kata.id)
       markMastered(lvl.level, kata.id)
+      // Belajar manual dari halaman Vocab tetap kehitung di Study Today:
+      // +1 studied (kalau ini pertama kali kata ini dilihat) dan +1 correct
+      // karena langsung ditandai hafal, plus nyalain streak hari ini.
+      logActivity(belumPernahDilihat ? 1 : 0, 1)
+      recordActivity()
     }
     markSeen(lvl.level, kata.id)
   }
@@ -79,6 +87,10 @@ export function Vocab() {
 
   function openWord(v) {
     setModalWord(v)
+    if (!seenSet.has(v.id)) {
+      logActivity(1, 0)
+      recordActivity()
+    }
     markSeen(lvl.level, v.id)
   }
 
@@ -93,6 +105,10 @@ export function Vocab() {
     const w = filtered[idx]
     if (!w) return
     setModalWord(w)
+    if (!seenSet.has(w.id)) {
+      logActivity(1, 0)
+      recordActivity()
+    }
     markSeen(lvl.level, w.id)
     setPage(Math.floor(idx / PAGE_SIZE) + 1) // sinkronkan nomor halaman biar konsisten pas modal ditutup
   }
@@ -311,7 +327,7 @@ export function Vocab() {
             </div>
 
             {modalWord.contoh && (
-              <div className="border-t border-surface-border pt-4">
+              <div className="border-t border-surface-border pt-4 space-y-3">
                 <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2 font-semibold">Contoh Kalimat</p>
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
@@ -320,6 +336,15 @@ export function Vocab() {
                   </div>
                   <AudioButton text={modalWord.contoh} size="sm" ghost />
                 </div>
+                {modalWord.contoh2 && (
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-hanzi text-xl text-white/80">{modalWord.contoh2}</p>
+                      <p className="text-white/40 text-sm italic mt-1">{modalWord.terjemahan2}</p>
+                    </div>
+                    <AudioButton text={modalWord.contoh2} size="sm" ghost />
+                  </div>
+                )}
               </div>
             )}
 
@@ -331,24 +356,26 @@ export function Vocab() {
       </Modal>
 
       {/* Tombol navigasi kiri/kanan — lingkaran mengambang TERPISAH dari box modal,
-          nempel di tepi layar. Cuma tampil di layar sm ke atas (laptop); di HP pakai swipe. */}
+          posisinya di tengah celah antara modal (max-w-4xl) dan tepi layar, bukan
+          mepet ke ujung. Baru muncul dari breakpoint lg ke atas (laptop) — di bawah
+          itu modal belum tentu selebar max-nya jadi hitungannya bisa geser; di HP pakai swipe. */}
       {modalWord && (
         <>
           <button
             onClick={goPrev}
             disabled={!hasPrev}
             aria-label="Kata sebelumnya"
-            className="hidden sm:flex fixed left-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
+            className="hidden lg:flex fixed left-[calc(25vw_-_16rem)] top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center leading-none bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
           >
-            ←
+            <span className="-mt-0.5">←</span>
           </button>
           <button
             onClick={goNext}
             disabled={!hasNext}
             aria-label="Kata berikutnya"
-            className="hidden sm:flex fixed right-6 top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
+            className="hidden lg:flex fixed right-[calc(25vw_-_16rem)] top-1/2 -translate-y-1/2 w-16 h-16 rounded-full items-center justify-center leading-none bg-black/50 backdrop-blur border border-white/15 text-white/70 hover:text-white hover:border-white/30 hover:bg-black/70 text-2xl transition-all z-[60] disabled:opacity-0 disabled:pointer-events-none"
           >
-            →
+            <span className="-mt-0.5">→</span>
           </button>
         </>
       )}

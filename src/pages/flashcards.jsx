@@ -20,7 +20,7 @@ const LEVEL_EMOJIS = ['🌱','🌿','🌳','🎋','🎍']
 export function FlashCards() {
   const { settings } = useSettings()
   const { userId } = useAuthContext()
-  const { progress, markSeen, markMastered, reviewSRS, logActivity } = useProgress(userId)
+  const { progress, markSeen, markMastered, unmarkMastered, reviewSRS, logActivity } = useProgress(userId)
   const { recordActivity } = useStreak(userId)
   const { bookmarkSet, toggle: toggleBookmark } = useBookmark(userId)
   const { getDue, countDue, refresh: refreshSRS } = useSRS(userId)
@@ -47,6 +47,14 @@ export function FlashCards() {
   const masteredSet = new Set(lvlPrg.mastered || [])
   const seenSet     = new Set(lvlPrg.seen || [])
 
+  // Set "sudah hafal" GABUNGAN semua level — dipakai khusus untuk mode yang
+  // katanya bukan cuma dari selectedLevel (bookmarks, hasil cari kata). Kalau
+  // dipaksa pakai `masteredSet` (level-only) di atas, kata bookmark dari level
+  // lain akan selalu ke-deteksi "belum hafal" walau sebenarnya sudah dikuasai.
+  const masteredSetAll = new Set(
+    Object.values(progress).flatMap(lvl => lvl.mastered || [])
+  )
+
   // Bookmark words dari semua level (tidak difilter topik — bookmark lintas level)
   const bookmarkWords = allWordsComplete.filter(w => bookmarkSet.has(w.id))
 
@@ -58,7 +66,9 @@ export function FlashCards() {
   function getDeck(m) {
     if (m === 'bookmarks') return bookmarkWords
     if (m === 'unseen')    return vocab.filter(v => !seenSet.has(v.id))
-    if (m === 'review')    return vocab.filter(v => !masteredSet.has(v.id))
+    // "Ulang" = review kata yang SUDAH dihafal (buat jaga retensi), bukan kata
+    // yang belum — itu tugasnya mode "Kata Baru"/"unseen". Sebelumnya kebalik.
+    if (m === 'review')    return vocab.filter(v => masteredSet.has(v.id))
     if (m === 'srs')       return getDue(vocab)
     if (m === 'search')    return searchedWord ? [searchedWord] : []
     return vocab
@@ -81,12 +91,25 @@ export function FlashCards() {
   }
 
   function handleSkip(kata) {
-    markSeen(kata.level || selectedLevel, kata.id)
-    // Catat sebagai "belum hafal" di SRS juga, supaya kata ini dijadwalkan
-    // ulang lebih cepat lewat mode Review Terjadwal (bukan cuma dicatat "seen").
-    // reviewSRS() nulis storage SECARA SINKRON (bukan lewat updater setState),
-    // jadi aman langsung refresh sesudahnya di sini.
-    reviewSRS(kata.id, GRADE.WRONG)
+    const level = kata.level || selectedLevel
+    markSeen(level, kata.id)
+
+    // Kalau kata ini sebelumnya sudah ditandai "hafal" (misalnya lagi direview
+    // lewat mode Ulang/Review Terjadwal/Bookmark) tapi barusan dijawab "belum
+    // hafal", statusnya harus DITURUNKAN lagi — bukan cuma dicatat salah di SRS
+    // doang. unmarkMastered() sudah nge-handle SRS grade WRONG + clawback XP
+    // secara simetris (lihat useprogress.js), jadi cukup panggil itu SAJA di
+    // sini (jangan dobel manggil reviewSRS, nanti SRS ke-update 2x).
+    if (masteredSetAll.has(kata.id)) {
+      unmarkMastered(level, kata.id)
+    } else {
+      // Kata yang memang belum pernah dihafal — cukup downgrade jadwal SRS-nya
+      // aja supaya lebih cepat muncul lagi di mode Review Terjadwal.
+      // reviewSRS() nulis storage SECARA SINKRON (bukan lewat updater
+      // setState), jadi aman langsung refresh sesudahnya di sini.
+      reviewSRS(kata.id, GRADE.WRONG)
+    }
+
     logActivity(1, 0)
     refreshSRS()
   }
@@ -174,7 +197,7 @@ export function FlashCards() {
             { key: 'srs',       icon: '🧠', label: 'Review Terjadwal', desc: `${countDue(vocab)} kata jatuh tempo`, highlight: true, highlightColor: 'rgba(96,165,250,0.2)', highlightBg: 'rgba(96,165,250,0.04)' },
             { key: 'all',       icon: '📚', label: 'Semua Kata',   desc: `${vocab.length} kata` },
             { key: 'unseen',    icon: '✨', label: 'Kata Baru',    desc: `${vocab.filter(v => !seenSet.has(v.id)).length} belum dilihat` },
-            { key: 'review',    icon: '🔄', label: 'Ulang',        desc: `${vocab.filter(v => !masteredSet.has(v.id)).length} belum hafal` },
+            { key: 'review',    icon: '🔄', label: 'Ulang',        desc: `${vocab.filter(v => masteredSet.has(v.id)).length} sudah dihafal` },
             { key: 'bookmarks', icon: '🔖', label: 'Bookmark',     desc: `${bookmarkWords.length} kata tersimpan`, highlight: true, highlightColor: 'rgba(245,158,11,0.2)', highlightBg: 'rgba(245,158,11,0.04)' },
           ].map(m => (
             <button key={m.key} onClick={() => { setMode(m.key); setFinished(false) }}
@@ -200,7 +223,9 @@ export function FlashCards() {
           style={mode === 'bookmarks' ? { background:'rgba(245,158,11,0.12)', color:'#fbbf24', border:'1px solid rgba(245,158,11,0.25)' } : {}}>
           {mode === 'bookmarks' ? '🔖 Bookmark' : mode === 'srs' ? '🧠 Review Terjadwal' : lvl.name}
         </span>
-        <span className="text-green-400 text-sm font-bold">✓ {masteredSet.size}</span>
+        <span className="text-green-400 text-sm font-bold">
+          ✓ {(mode === 'bookmarks' || mode === 'search') ? masteredSetAll.size : masteredSet.size}
+        </span>
       </div>
 
       {deck.length === 0 ? (
@@ -216,7 +241,7 @@ export function FlashCards() {
           showPinyin={settings.showPinyin}
           autoFlip={settings.autoFlip}
           autoFlipDelay={settings.autoFlipDelay}
-          masteredSet={masteredSet}
+          masteredSet={(mode === 'bookmarks' || mode === 'search') ? masteredSetAll : masteredSet}
           bookmarkSet={bookmarkSet}
           onMastered={handleMastered}
           onSkip={handleSkip}

@@ -3,7 +3,8 @@ import { storage, STORAGE_KEYS, upsertData, loadSettings } from '../utils/storag
 import { TARGET_DATE } from '../utils/datehelper'
 
 export const DEFAULT_SETTINGS = {
-  dailyTarget:    20,
+  dailyTarget:        20,
+  dailyGrammarTarget: 3,
   quizSize:       20,
   quizType:       'hanzi_to_indo',
   showPinyin:     true,

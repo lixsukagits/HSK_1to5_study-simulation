@@ -133,6 +133,17 @@
     box-shadow: 0 0 0 3px rgba(237,21,21,0.12);
   }
 
+  /* ── Date input calendar icon ──
+     PENTING: pendekatan filter:invert() yang lama cuma jalan di Chrome/Edge
+     (browser berbasis WebKit/Blink yang support ::-webkit-calendar-picker-indicator).
+     Di Firefox/browser lain gak ngefek sama sekali. `color-scheme` di bawah
+     ini pendekatan standar (didukung MDN) — browser otomatis render SELURUH
+     UI native form control (ikon kalender, checkbox, scrollbar bawaan OS)
+     sesuai skema warna, tanpa perlu hack filter per elemen. */
+  input[type="date"] {
+    color-scheme: dark;
+  }
+
   /* ── Progress ── */
   .progress-track {
     @apply h-2 rounded-full overflow-hidden;
@@ -352,6 +363,11 @@ html.light .input {
 }
 html.light .input::placeholder { color: #a1a1aa; }
 html.light .input:focus { border-color: rgba(237,21,21,0.5); }
+
+/* Date input calendar icon di light mode — balik ke skema terang, ngikutin warna teks */
+html.light input[type="date"] {
+  color-scheme: light;
+}
 
 /* Navbar di light mode */
 html.light header .absolute { background: rgba(244,244,245,0.85) !important; }

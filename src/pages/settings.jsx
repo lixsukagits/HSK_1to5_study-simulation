@@ -1,7 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useSettings } from '../hooks/usesettings'
+import { useProgress } from '../hooks/useprogress'
+import { useGrammar } from '../hooks/usegrammar'
 import { storage, STORAGE_KEYS, deleteData } from '../utils/storage'
 import { HSK_LEVELS } from '../constants/hsklevels'
+import { dataStats } from '../data'
+import { daysUntil } from '../utils/datehelper'
 import { QUIZ_TYPES, QUIZ_TYPE_LABELS, QUIZ_LENGTHS } from '../constants/quiztypes'
 import { useAuthContext } from '../context/authcontext'
 
@@ -69,6 +73,27 @@ function importData(file, onDone) {
 export function Settings() {
   const { userId } = useAuthContext()
   const { settings, updateSetting, resetSettings } = useSettings(userId)
+  const { progress }  = useProgress(userId)
+  const { understood } = useGrammar(userId)
+
+  // ─── Sistem rekomendasi kecepatan belajar ──────────────────────
+  // (sisa kata/grammar yang BELUM dipelajari) ÷ (sisa hari ke targetDate)
+  const totalKata          = HSK_LEVELS.reduce((s, l) => s + l.totalKata, 0)
+  const totalMasteredVocab = Object.values(progress).reduce((s, l) => s + (l.mastered?.length || 0), 0)
+  const remainingVocab     = Math.max(0, totalKata - totalMasteredVocab)
+
+  const totalGrammar          = Object.values(dataStats.grammarPoints).reduce((s, n) => s + n, 0)
+  const totalUnderstoodGrammar = Object.values(understood).reduce((s, arr) => s + (arr?.length || 0), 0)
+  const remainingGrammar      = Math.max(0, totalGrammar - totalUnderstoodGrammar)
+
+  const daysLeft = daysUntil(settings.targetDate)
+  const suggestedWords   = daysLeft > 0 ? Math.ceil(remainingVocab / daysLeft)   : remainingVocab
+  const suggestedGrammar = daysLeft > 0 ? Math.ceil(remainingGrammar / daysLeft) : remainingGrammar
+
+  function applyRecommendation() {
+    updateSetting('dailyTarget', suggestedWords)
+    updateSetting('dailyGrammarTarget', suggestedGrammar)
+  }
 
   async function clearAllData() {
     if (!window.confirm('Hapus SEMUA data progress, streak, grammar, tasks, confusables, SRS, achievement, XP, bookmark, dan log belajar?\n\nTindakan ini tidak bisa dibatalkan.')) {
@@ -174,8 +199,12 @@ export function Settings() {
         <Row label="Target harian" desc="Kata yang ingin dipelajari setiap hari">
           <Stepper value={settings.dailyTarget} min={5} max={100} step={5} onChange={v => updateSetting('dailyTarget', v)} />
         </Row>
+        <Row label="Target grammar harian" desc="Poin grammar yang ingin dipahami setiap hari">
+          <Stepper value={settings.dailyGrammarTarget} min={1} max={20} step={1} onChange={v => updateSetting('dailyGrammarTarget', v)} />
+        </Row>
         <Row label="Tanggal target" desc='Target tanggal kamu ingin menguasai HSK 1-5 (dipakai buat hitung "Sisa target" di beranda)'>
-          <input type="date" value={settings.targetDate}
+          <input type="date" value={settings.targetDate} lang="id-ID"
+            min={new Date().toISOString().split('T')[0]}
             onChange={e => updateSetting('targetDate', e.target.value)}
             className="input py-1.5 text-sm w-auto" />
         </Row>
@@ -184,6 +213,29 @@ export function Settings() {
             {HSK_LEVELS.map(l => <option key={l.level} value={l.level}>{l.name}</option>)}
           </select>
         </Row>
+
+        {/* Rekomendasi kecepatan belajar otomatis */}
+        <div className="mt-3 pt-4 border-t border-surface-border">
+          {daysLeft > 0 ? (
+            <div className="rounded-xl p-3.5 flex items-start gap-3"
+              style={{ background: 'rgba(237,21,21,0.06)', border: '1px solid rgba(237,21,21,0.15)' }}>
+              <span className="text-lg leading-none mt-0.5">💡</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-white/60 text-xs leading-relaxed">
+                  Sisa <strong className="text-white">{remainingVocab} kata</strong> &amp; <strong className="text-white">{remainingGrammar} grammar</strong> dalam <strong className="text-white">{daysLeft} hari</strong> lagi. Disaranin belajar sekitar{' '}
+                  <strong style={{ color: '#ff6262' }}>{suggestedWords} kata/hari</strong> dan{' '}
+                  <strong style={{ color: '#ff6262' }}>{suggestedGrammar} grammar/hari</strong>.
+                </p>
+                <button onClick={applyRecommendation}
+                  className="mt-2 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary-600/20 text-primary-300 hover:bg-primary-600/30 transition-all">
+                  Pakai saran ini
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-white/25 text-xs">Atur tanggal target di atas dulu buat lihat rekomendasi kecepatan belajar harian.</p>
+          )}
+        </div>
       </section>
 
       {/* ── Flash Card ── */}

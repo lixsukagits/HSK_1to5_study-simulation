@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { HSK_LEVELS } from '../constants/hsklevels'
 import { hskData } from '../data'
@@ -21,7 +21,11 @@ const REVIEW_RATIO   = 0.35
 const QUIZ_PER_BATCH = 5
 
 // ─── Tentukan level yang sudah unlock ────────────────────────
-// Level berikutnya baru unlock kalau level sekarang sudah 80% mastered
+// Level berikutnya baru unlock kalau level sekarang sudah 80% mastered.
+// PENTING: kalau data vocab level itu kosong/belum ke-load, ratio HARUS
+// dianggap 0 (bukan 1) — dulu dianggap 1 ("lolos otomatis") dan itu bisa
+// bikin level-level di atasnya ikut ter-unlock padahal belum disentuh sama
+// sekali. Level dengan data kosong justru harus mengunci, bukan meloloskan.
 function getUnlockedLevels(progress) {
   const UNLOCK_THRESHOLD = 0.8
 
@@ -31,7 +35,7 @@ function getUnlockedLevels(progress) {
     const lvl    = HSK_LEVELS[i]
     const vocab  = hskData[lvl.level] || []
     const lvlPrg = progress[lvl.level] || { seen: [], mastered: [] }
-    const masteredRatio = vocab.length === 0 ? 1 : lvlPrg.mastered.length / vocab.length
+    const masteredRatio = vocab.length === 0 ? 0 : lvlPrg.mastered.length / vocab.length
 
     unlockedUpTo = i
     if (masteredRatio < UNLOCK_THRESHOLD) break
@@ -40,43 +44,75 @@ function getUnlockedLevels(progress) {
   return HSK_LEVELS.slice(0, unlockedUpTo + 1)
 }
 
+// ─── Level yang dipakai untuk sesi belajar ────────────────────
+// = level yang sudah unlock (dari mastery), DIBATASI oleh preferredLevel
+// kalau user secara eksplisit set fokus ke level tertentu di Settings.
+// preferredLevel cuma bisa MENGERUCUTKAN (gak bisa lompat ke level yang
+// belum ke-unlock), jadi settings selalu dihormati tapi tetap gak bisa
+// "curang" skip level yang belum dikuasai.
+function getStudyLevels(progress, settings) {
+  const unlocked = getUnlockedLevels(progress)
+  const cap = settings?.preferredLevel
+  if (cap && cap >= 1) {
+    const capped = unlocked.filter(l => l.level <= cap)
+    return capped.length > 0 ? capped : unlocked.slice(0, 1)
+  }
+  return unlocked
+}
+
 // ─── Build session pakai SRS ──────────────────────────────────
+// Level diproses berurutan dari yang paling kecil (HSK1 → HSK5) dan tiap
+// level "diisi penuh dulu" sebelum lanjut ke level berikutnya. Jadi selama
+// HSK1 masih punya kata baru/review yang tersisa, sesi TIDAK akan menyentuh
+// HSK2+ walaupun level itu teknisnya sudah unlock. Level lebih tinggi baru
+// kepakai kalau level di bawahnya beneran sudah habis (kata baru abis, review
+// SRS gak ada yang due hari ini).
 function buildDailySession(progress, settings, srsData) {
   const target   = settings.dailyTarget || 20
   const newCount = Math.ceil(target * (1 - REVIEW_RATIO))
   const revCount = Math.floor(target * REVIEW_RATIO)
 
+  const studyLevels = getStudyLevels(progress, settings) // urutannya sudah level 1 → 5
+
   const newWords = []
   const revWords = []
 
-  const unlockedLevels = getUnlockedLevels(progress)
+  for (const lvl of studyLevels) {
+    if (newWords.length >= newCount && revWords.length >= revCount) break
 
-  for (const lvl of unlockedLevels) {
     const vocab   = hskData[lvl.level] || []
     const lvlPrg  = progress[lvl.level] || { seen: [], mastered: [] }
     const seenSet = new Set(lvlPrg.seen)
     const mastSet = new Set(lvlPrg.mastered)
 
-    // Kata baru: belum pernah dilihat
-    vocab.filter(v => !seenSet.has(v.id))
-         .forEach(v => newWords.push({ ...v, _level: lvl.level, _isNew: true }))
+    if (newWords.length < newCount) {
+      const belumDilihat = vocab.filter(v => !seenSet.has(v.id))
+      shuffle(belumDilihat)
+        .slice(0, newCount - newWords.length)
+        .forEach(v => newWords.push({ ...v, _level: lvl.level, _isNew: true }))
+    }
 
-    // SRS review: sudah dilihat, belum dikuasai, dan due hari ini
-    const seen = vocab.filter(v => seenSet.has(v.id) && !mastSet.has(v.id))
-    getDueWords(seen, srsData)
-      .forEach(v => revWords.push({ ...v, _level: lvl.level, _isNew: false }))
+    if (revWords.length < revCount) {
+      const sudahDilihat = vocab.filter(v => seenSet.has(v.id) && !mastSet.has(v.id))
+      getDueWords(sudahDilihat, srsData)
+        .slice(0, revCount - revWords.length)
+        .forEach(v => revWords.push({ ...v, _level: lvl.level, _isNew: false }))
+    }
   }
 
-  return shuffle([
-    ...shuffle(newWords).slice(0, newCount),
-    ...shuffle(revWords).slice(0, revCount),
-  ])
+  // Urutan tampil di dalam sesi tetap diacak biar gak monoton, tapi ISI-nya
+  // (kata mana yang kepilih) sudah diprioritaskan level rendah dari langkah di atas.
+  return shuffle([...newWords, ...revWords])
 }
 
-function makeQuestion(kata, pool) {
+// quizType dari Settings menentukan ARAH soal:
+//  - 'hanzi_to_indo'  : lihat hanzi, pilih arti Indonesia   (default)
+//  - 'indo_to_hanzi'  : lihat arti Indonesia, pilih hanzi
+//  - 'pinyin_to_hanzi': lihat pinyin, pilih hanzi
+function makeQuestion(kata, pool, quizType = 'hanzi_to_indo') {
   const distractors = shuffle(pool.filter(v => v.id !== kata.id)).slice(0, 3)
-  const options     = shuffle([kata, ...distractors])
-  return { kata, options, answer: kata.id }
+  const options      = shuffle([kata, ...distractors])
+  return { kata, options, answer: kata.id, quizType }
 }
 
 // ─── Step Progress Bar ────────────────────────────────────────
@@ -96,9 +132,24 @@ function StepBar({ current, total, correctCount }) {
 }
 
 // ─── Flash Step ───────────────────────────────────────────────
-function FlashStep({ kata, onNext, isBookmarked, onBookmark }) {
+function FlashStep({ kata, onNext, isBookmarked, onBookmark, settings }) {
   const [revealed, setRevealed] = useState(false)
   const lvl = HSK_LEVELS.find(l => l.level === kata._level) || HSK_LEVELS[0]
+
+  const showPinyin = settings?.showPinyin !== false
+  const showContoh = settings?.showContoh !== false
+  const autoFlip   = !!settings?.autoFlip
+  const autoDelay  = Math.max(1, settings?.autoFlipDelay || 3)
+
+  // Auto-flip: kalau setting aktif, kartu otomatis terbuka sendiri setelah
+  // `autoFlipDelay` detik tanpa perlu diklik. Reset tiap ganti kata (key di
+  // FlashStep sudah `flash-${stepIdx}` di parent jadi komponen ini remount
+  // tiap kata baru, timer otomatis fresh).
+  useEffect(() => {
+    if (!autoFlip) return
+    const t = setTimeout(() => setRevealed(true), autoDelay * 1000)
+    return () => clearTimeout(t)
+  }, [autoFlip, autoDelay])
 
   return (
     <div className="animate-fade-in">
@@ -123,12 +174,12 @@ function FlashStep({ kata, onNext, isBookmarked, onBookmark }) {
           style={{ fontSize:'clamp(64px,14vw,100px)', color: lvl.warnaHex }}>
           {kata.hanzi}
         </div>
-        <div className="text-white/40 text-lg">{kata.pinyin}</div>
+        {showPinyin && <div className="text-white/40 text-lg">{kata.pinyin}</div>}
 
         {revealed && (
           <div className="mt-6 pt-5 border-t border-surface-border animate-slide-up">
             <div className="text-white text-xl font-semibold mb-2">{kata.arti}</div>
-            {kata.contoh && (
+            {showContoh && kata.contoh && (
               <div className="flex items-start gap-2 justify-center" onClick={e => e.stopPropagation()}>
                 <div>
                   <div className="font-hanzi text-sm text-white/45 mt-2">{kata.contoh}</div>
@@ -143,7 +194,9 @@ function FlashStep({ kata, onNext, isBookmarked, onBookmark }) {
 
       {!revealed ? (
         <>
-          <p className="text-center text-white/20 text-xs mb-5">Klik kartu untuk melihat arti</p>
+          <p className="text-center text-white/20 text-xs mb-5">
+            {autoFlip ? `Kartu terbuka otomatis dalam ${autoDelay}s, atau klik sekarang` : 'Klik kartu untuk melihat arti'}
+          </p>
           <div className="text-center">
             <button onClick={() => onNext(false)} className="text-white/20 text-xs hover:text-white/40 transition-colors">
               Lewati →
@@ -179,17 +232,39 @@ function QuizStep({ question, onAnswer }) {
         <span className={`badge badge-level-${lvl.level}`}>{lvl.name}</span>
       </div>
 
-      <div className="card p-8 text-center mb-5 relative">
-        <div className="absolute top-4 right-4">
-          <AudioButton text={question.kata.hanzi} size="md" />
-        </div>
-        <p className="section-label mb-5">Pilih arti yang benar</p>
-        <div className="font-hanzi font-bold leading-none mb-3"
-          style={{ fontSize:'clamp(56px,12vw,88px)', color: lvl.warnaHex }}>
-          {question.kata.hanzi}
-        </div>
-        <div className="text-white/35 text-base">{question.kata.pinyin}</div>
-      </div>
+      {(() => {
+        const type = question.quizType || 'hanzi_to_indo'
+        const promptLabel = type === 'indo_to_hanzi'
+          ? 'Pilih hanzi yang benar'
+          : type === 'pinyin_to_hanzi'
+            ? 'Pilih hanzi yang sesuai pinyin'
+            : 'Pilih arti yang benar'
+
+        return (
+          <div className="card p-8 text-center mb-5 relative">
+            {type !== 'indo_to_hanzi' && (
+              <div className="absolute top-4 right-4">
+                <AudioButton text={question.kata.hanzi} size="md" />
+              </div>
+            )}
+            <p className="section-label mb-5">{promptLabel}</p>
+
+            {type === 'indo_to_hanzi' ? (
+              <div className="text-white text-2xl font-semibold">{question.kata.arti}</div>
+            ) : type === 'pinyin_to_hanzi' ? (
+              <div className="text-white text-2xl font-semibold">{question.kata.pinyin}</div>
+            ) : (
+              <>
+                <div className="font-hanzi font-bold leading-none mb-3"
+                  style={{ fontSize:'clamp(56px,12vw,88px)', color: lvl.warnaHex }}>
+                  {question.kata.hanzi}
+                </div>
+                <div className="text-white/35 text-base">{question.kata.pinyin}</div>
+              </>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="grid grid-cols-1 gap-2.5">
         {question.options.map((opt, i) => {
@@ -198,13 +273,17 @@ function QuizStep({ question, onAnswer }) {
             if (opt.id === question.answer) state = 'correct'
             else if (opt.id === selected)   state = 'wrong'
           }
+          const type = question.quizType || 'hanzi_to_indo'
+          const optLabel = type === 'indo_to_hanzi' || type === 'pinyin_to_hanzi' ? opt.hanzi : opt.arti
           return (
             <button key={opt.id} onClick={() => pick(opt.id)}
               className={`quiz-option ${state === 'correct' ? 'correct' : ''} ${state === 'wrong' ? 'wrong' : ''} ${selected !== null ? 'answered' : ''}`}>
               <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-white/5 text-white/25 text-xs font-bold mr-3">
                 {String.fromCharCode(65+i)}
               </span>
-              {opt.arti}
+              {type === 'indo_to_hanzi' || type === 'pinyin_to_hanzi'
+                ? <span className="font-hanzi text-lg">{optLabel}</span>
+                : optLabel}
             </button>
           )
         })}
@@ -270,6 +349,10 @@ export function StudyToday() {
   const todayLog       = dailyLog[toDateKey()] || { studied: 0 }
   const target         = settings.dailyTarget || 20
   const doneToday      = todayLog.studied >= target
+  // unlockedLevels = progress asli (buat badge "level aktif" & hint unlock berikutnya).
+  // buildDailySession di bawah punya capping preferredLevel-nya sendiri lewat
+  // getStudyLevels — dipisah supaya badge tetap nunjukin progress sebenarnya,
+  // bukan ke-cut sama fokus manual user.
   const unlockedLevels = useMemo(() => getUnlockedLevels(progress), [progress])
   const currentLevel   = unlockedLevels[unlockedLevels.length - 1]
 
@@ -315,7 +398,7 @@ export function StudyToday() {
 
     const newFlashCount = flashCount + 1
     if (newFlashCount >= QUIZ_PER_BATCH && stepIdx + 1 < session.length) {
-      setQuizQ(makeQuestion(kata, allPool))
+      setQuizQ(makeQuestion(kata, allPool, settings.quizType))
       setPhase('quiz'); setFlashCount(0)
     } else {
       setFlashCount(newFlashCount); advance()
@@ -405,9 +488,9 @@ export function StudyToday() {
           <p className="section-label mb-2.5">Latihan Lainnya</p>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { label:'Grammar',   icon:'📖', to:'/grammar/1' },
-              { label:'Tugas',     icon:'📝', to:'/tasks' },
-              { label:'Kata Mirip',icon:'🔀', to:'/confusables' },
+              { label:'Grammar',   icon:'📖', to:`/grammar/${currentLevel?.level || 1}` },
+              { label:'Tugas',     icon:'📝', to:`/tasks/${currentLevel?.level || 1}` },
+              { label:'Kata Mirip',icon:'🔀', to:`/confusables/${currentLevel?.level || 1}` },
               { label:'Kuis',      icon:'✏️', to:'/quiz' },
             ].map(f => (
               <Link key={f.label} to={f.to} className="card-hover p-3 text-center">
@@ -461,6 +544,7 @@ export function StudyToday() {
           onNext={handleFlashDone}
           isBookmarked={bookmarkSet.has(current.id)}
           onBookmark={toggleBookmark}
+          settings={settings}
         />
       )}
       {phase === 'quiz' && quizQ && (

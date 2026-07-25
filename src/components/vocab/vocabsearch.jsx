@@ -15,32 +15,64 @@ import { AudioButton } from '../ui/audiobutton'
  * - maxResults  : jumlah maksimum hasil yang ditampilkan (default 8)
  * - autoFocus   : fokus otomatis ke input (opsional)
  */
+const SEARCH_MODES = [
+  { key: 'zh', label: '中文', placeholder: 'Cari hanzi atau pinyin...' },
+  { key: 'id', label: 'Indo', placeholder: 'Cari dari arti bahasa Indonesia...' },
+]
+
 export function VocabSearch({
   vocab = [],
   onSelect,
-  placeholder = 'Cari hanzi, pinyin, arti...',
+  placeholder,
   levelColor = '#ed1515',
   maxResults = 8,
   autoFocus = false,
 }) {
-  const { filtered, search, setSearch } = useVocab(vocab)
+  const [searchMode, setSearchMode] = useState('zh') // 'zh' | 'id'
+  const { filtered, search, setSearch } = useVocab(vocab, searchMode)
   const [focused, setFocused] = useState(false)
 
   const showResults = search.trim().length > 0
   const results = filtered.slice(0, maxResults)
   const hiddenCount = Math.max(0, filtered.length - results.length)
 
+  const activeMode = SEARCH_MODES.find(m => m.key === searchMode)
+  const effectivePlaceholder = placeholder || activeMode.placeholder
+
   function handleSelect(kata) {
     onSelect?.(kata)
   }
 
+  function switchMode(key) {
+    setSearchMode(key)
+    // ganti mode = ganti "bahasa" pencarian, hasil lama dari field yang beda
+    // gak relevan lagi jadi query dikosongkan biar gak bingung
+    setSearch('')
+  }
+
   return (
     <div className="relative w-full">
+      {/* Toggle mode: cari dari Mandarin (hanzi/pinyin) atau dari Indonesia (arti) */}
+      <div className="flex gap-1.5 mb-2">
+        {SEARCH_MODES.map(m => (
+          <button
+            key={m.key}
+            type="button"
+            onClick={() => switchMode(m.key)}
+            className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+              searchMode === m.key ? 'bg-white/10 text-white' : 'text-white/25 hover:text-white/50 hover:bg-white/5'
+            }`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
       <div className="relative">
         <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/25 text-xs pointer-events-none">🔍</span>
         <input
           className="input w-full pl-8 text-sm"
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           value={search}
           autoFocus={autoFocus}
           onChange={e => setSearch(e.target.value)}
